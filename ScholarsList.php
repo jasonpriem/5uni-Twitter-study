@@ -13,19 +13,7 @@ class ScholarsList {
         $this->parser = $parser;
     }
 
-    public function uploadDirToDB($dir){
-        $contents = scandir($dir);
-        $totalNames = 0;
-        foreach ($contents as $filename){
-            if ($filename != '.' && $filename != '..'){
-                $loc = $dir . '/' . $filename;
-                $totalNames += $this->uploadFileToDB($loc, $totalNames);
-            }
-        }
-    }
-
-    public function uploadFileToDB($loc, $totalNames){
-        echo "<br><br><br><h2>$loc: $totalNames so far</h2>";
+    public function uploadFileToDB($loc){
         $namesInThisFile = 0;
         $str = file_get_contents($loc);
         $lines = preg_split("/\r\n|\r|\n/", $str);
@@ -40,16 +28,16 @@ class ScholarsList {
             }
             elseif(strpos($line, '*') === false && strpos($line, '|')) { // it's a line with scholar data
                 $namesInThisFile++;
-                $id = str_pad($totalNames + $namesInThisFile, 5, "0", STR_PAD_LEFT);
+                $id = str_pad($namesInThisFile, 5, "0", STR_PAD_LEFT);
                 echo "now parsing line $lineNumber (id: $id): $line...<br>";
                 $fields = explode('|', $line);
                 
-                $this->scholar->setDept = $dept;
-                $this->scholar->setInstitution = $fields[0];
-                $this->scholar->setSuperdiscipline = $fields[1];
-                $this->scholar->setRank = $fields[2];
-                $this->scholar->setIs_duplicated = false;
-                $this->scholar->setIs_redundant = false;
+                $this->scholar->setDept($dept);
+                $this->scholar->setInstitution($fields[0]);
+                $this->scholar->setSuperdiscipline($fields[1]);
+                $this->scholar->setRank($fields[2]);
+                $this->scholar->setIs_duplicated(false);
+                $this->scholar->setIs_redundant(false);
                 $this->scholar->setName_string($fields[3]);
                 $this->scholar->set_id($id);
 
