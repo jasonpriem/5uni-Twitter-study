@@ -13,31 +13,30 @@ class ScholarsList {
         $this->parser = $parser;
     }
 
-    public function uploadFileToDB($loc){
-        $namesInThisFile = 0;
+    public function uploadFileToDB($loc, $startLine = 1, $namesDoneAlready = 0){
         $str = file_get_contents($loc);
         $lines = preg_split("/\r\n|\r|\n/", $str);
+        $lines = array_slice($lines, $startLine - 1, null, true);
+
         $dept = '';
         foreach ($lines as $k => $line){
-            $lineNumber  = $k + 1;
 
             $this->scholar->reset();
             if (preg_match('/^\*\* \w/', $line)){ // this line indicates the department
-                echo "line $lineNumber: $line<br>";
+                echo "line $startLine: $line<br>";
                 $dept = substr($line, 3);
             }
             elseif(strpos($line, '*') === false && strpos($line, '|')) { // it's a line with scholar data
-                $namesInThisFile++;
-                $id = str_pad($namesInThisFile, 5, "0", STR_PAD_LEFT);
-                echo "now parsing line $lineNumber (id: $id): $line...<br>";
+                $namesDoneAlready++;
+                $id = str_pad($namesDoneAlready, 5, "0", STR_PAD_LEFT);
+                echo "now parsing line $startLine (id: $id): $line...<br>";
                 $fields = explode('|', $line);
                 
                 $this->scholar->setDept($dept);
                 $this->scholar->setInstitution($fields[0]);
                 $this->scholar->setSuperdiscipline($fields[1]);
                 $this->scholar->setRank($fields[2]);
-                $this->scholar->setIs_duplicated(false);
-                $this->scholar->setIs_redundant(false);
+                $this->scholar->setIs_redundant(0);
                 $this->scholar->setName_string($fields[3]);
                 $this->scholar->set_id($id);
 
@@ -49,7 +48,7 @@ class ScholarsList {
             else { // it's a blank or comment line, do nothing
             }
         }
-        return $namesInThisFile;
+        return $namesDoneAlready;
 
     }
 }

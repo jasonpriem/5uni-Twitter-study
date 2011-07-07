@@ -15,7 +15,6 @@ class Scholar {
     private $rank;
     private $name_string;
     private $name_obj;
-    private $is_duplicated;
     private $is_redundant;
 
 
@@ -102,10 +101,6 @@ class Scholar {
 
     public function setName_obj($name_obj) {
         $this->name_obj = $name_obj;
-    }
-
-    public function setIs_duplicated($is_duplicated) {
-        $this->is_duplicated = $is_duplicated;
     }
 
     public function setIs_redundant($is_redundant) {

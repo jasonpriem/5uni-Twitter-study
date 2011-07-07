@@ -7,48 +7,34 @@
   <body>
       <h1>5uni Twitter study</h1>
         <?php
+        set_time_limit(600);
         require_once("./bootstrap.php");
-        $scholarsDir = realpath(APP_PATH . '/..');
+        require_once("./populateDatabase.php");
+        require_once("./makeDesignDoc.php");
         $config = new Zend_Config_Ini(CONFIG_PATH);
-
         $couch = new Couch_Client($config->db->dsn, $config->db->name);
-        $parser = new HumanNameParser_Parser();
         
-        /***********************************************************************
-         * populate the database
-         **********************************************************************/
+        /* put the text file names in the database
+         */
+//        populateDatabase($couch, $config);
+        
+        /*setup the database queries we can use
+         */
+//        makeDesignDoc($couch, $config);
+        
+        /* print a list of the duplicated names; we'll manually go through these and
+         * figure out which ones are redundant with others and mark them accordingly
+         * using Futon, the CouchDB UI.
+         */
+//        echo $couch->getList("main", "dupes_form", "names");
 
-        $scholar = new Scholar($couch);
-        $list = new ScholarsList($scholar, $parser);
-        //      $list->uploadFileToDB($scholarsDir . '/' . 'all_scholars.txt', 0);
+        /* search the twitter user/search API to find twitter names based on people's
+         * real names; for each person, add the list of possible Twitter matches
+         * to their name in the DB.
+         */
+        findTwitterNames($couch, $config);
         
-        /***********************************************************************
-         * make the indexes and lists
-         **********************************************************************/    
-        
-        // get the views
-        $namesView = file_get_contents(APP_PATH . '/couchdb/views/names.js');
-        $dupesFormList = file_get_contents(APP_PATH . '/couchdb/lists/dupes_form.js');
 
-        // get the CouchDB design doc
-        try {
-            $doc = new Couch_Document($couch);
-            $doc->_id = "_design/main";
-        }
-        catch (Exception $e){ // it's already been created, we need to update it
-            $doc = Couch_Document::getInstance($couch, "_design/main");
-        }
-        
-        // set the design doc
-        $doc->set(
-            array(
-                "views" => array("names" => array("map" => $namesView)),
-                "lists" => array("dupes_form" => $dupesFormList)
-                )
-        );
-
-
-        
 
 
 
