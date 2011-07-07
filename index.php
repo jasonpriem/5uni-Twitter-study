@@ -11,6 +11,7 @@
         require_once("./bootstrap.php");
         require_once("./populateDatabase.php");
         require_once("./makeDesignDoc.php");
+        require_once("./findTwitterNames.php");
         $config = new Zend_Config_Ini(CONFIG_PATH);
         $couch = new Couch_Client($config->db->dsn, $config->db->name);
         
