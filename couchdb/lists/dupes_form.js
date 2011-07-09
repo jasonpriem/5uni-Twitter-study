@@ -29,7 +29,7 @@ function(head, req){
                 ret += " <span>"+ this.values[i].rank +"</span> ";
                 ret += " in <span>"+ this.values[i].dept +"</span> ";
                 ret += " <span><em>("+ this.values[i].superdiscipline +")</em></span> ";
-                ret += " <small><a href='http://www.google.com/search?ie=UTF-8&oe=UTF-8&sourceid=navclient&gfns=1&q=. \"";
+                ret += " <small><a href='http://www.google.com/search?ie=UTF-8&oe=UTF-8&sourceid=navclient&gfns=1&q=\"";
                 ret += name +"\" "+ this.values[i].institution +"'>google</a></small> ";
                 ret += "</li>";
             }
