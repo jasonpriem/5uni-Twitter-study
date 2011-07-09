@@ -36,8 +36,7 @@ class ScholarsList {
                 $this->scholar->setInstitution($fields[0]);
                 $this->scholar->setSuperdiscipline($fields[1]);
                 $this->scholar->setRank($fields[2]);
-                $this->scholar->setIs_duplicated(false);
-                $this->scholar->setIs_redundant(false);
+                $this->scholar->setIs_redundant(0);
                 $this->scholar->setName_string($fields[3]);
                 $this->scholar->set_id($id);
 

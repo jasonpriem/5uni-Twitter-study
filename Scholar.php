@@ -25,7 +25,8 @@ class Scholar {
 
 
 
-    public function save(){
+    public function save($tries=0, $maxTries=3){
+        $tries++;
         $vars = get_object_vars($this);
         $doc = new stdClass();
         foreach ($vars as $k => $v){
@@ -42,7 +43,20 @@ class Scholar {
             }
         }
 
+        try {
         $this->couch->storeDoc($doc);
+        return true;
+        }
+        catch (Exception $e) {
+            if ($tries > $maxTries) {
+                throw $e;
+            }
+            else {
+                sleep(1) ;
+                echo "\n<br>storing the doc didn't work; trying again...<br>\n";
+                return $this->save($tries);
+            }
+        }
     }
 
     public function reset(){
