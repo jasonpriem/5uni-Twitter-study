@@ -13,5 +13,7 @@ function findTwitterNames(Couch_Client $couch, Zend_Config $config){
         ));
 
         print_r($twitter->user->search("Kaitlin Costello"));
+
+
 }
 ?>
