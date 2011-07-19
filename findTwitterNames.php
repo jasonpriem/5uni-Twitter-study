@@ -16,6 +16,7 @@ function findTwitterNames(Couch_Client $couch, Zend_Config $config){
         $doc = $res->rows[0]->doc;
         
         $res = $twitter->user->search($doc->name_string);
+        echo date('H:i j M ');
         if (!isset($res->error)){
             
             /* I can't figure out how to get stuff out of Zend_Rest_Client_Response;
@@ -23,6 +24,9 @@ function findTwitterNames(Couch_Client $couch, Zend_Config $config){
             */
             $twitterUsers = array();
             foreach($res as $v){
+                if (!$v->name) { // this is generally an "over capacity" page...
+                    echo "Fail: Twitter returned something that's not a Twitter user...\n";
+                }
                 $twitterUsers[] = $v;
             }
             $doc->twitter_users = $twitterUsers;
