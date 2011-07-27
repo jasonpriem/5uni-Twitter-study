@@ -42,7 +42,8 @@
          /* Get the tweets for each user account that we've identified as belonging to a 
           * scholar in our sample, saving them in the DB
          */
-        getTweets($couch, $config);
+         getTweets($couch, $config);
+
 
 
 
