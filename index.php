@@ -5,6 +5,7 @@
         require_once("./makeDesignDoc.php");
         require_once("./findTwitterNames.php");
         require_once("./putTwitterScholarsListInDB.php");
+        require_once("./getTweets.php");
         $config = new Zend_Config_Ini(CONFIG_PATH);
         $couch = new Couch_Client($config->db->dsn, $config->db->name);
         
@@ -36,8 +37,12 @@
 
         /* upload twitter_scholars.txt to the database
          */
-        putTwitterScholarsListInDB($couch, $config);
+//        putTwitterScholarsListInDB($couch, $config);
 
+         /* Get the tweets for each user account that we've identified as belonging to a 
+          * scholar in our sample, saving them in the DB
+         */
+        getTweets($couch, $config);
 
 
 

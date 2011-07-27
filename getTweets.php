@@ -7,8 +7,29 @@
  * @param Zend_Config $config
  */
 function getTweets(Couch_Client $couch, Zend_Config $config){
-    $doc = $couch->getDoc($id);
-    $doc->matched_twitter_user = $twitterUser;
-    $couch->storeDoc($doc);
+    $response = $couch->limit(1)
+            ->include_docs(true)
+            ->getView('main', 'missing_tweets');
+    $screenName = $response->rows[0]->value;
+    $twitterId = $response->rows[0]->key;
+    $doc = $response->rows[0]->doc;
+    
+    // instantiate the twitter crawler
+    $token = new Zend_Oauth_Token_Access;
+    $token->setParams(array(
+        'oauth_token' => $config->twitter->accessToken,
+        'oauth_token_secret' => $config->twitter->accessTokenSecret
+    ));
+
+    $twitter = new MyTwitter(array(
+        'consumerKey' => $config->twitter->consumerKey,
+        'consumerSecret' => $config->twitter->consumerKeySecret,
+        'accessToken' => $token
+    ));
+
+    $res = $twitter->status->publicTimeline('k8lin');
+    echo date('H:i j M ');
+
+    print_r($res);
 }
 ?>
