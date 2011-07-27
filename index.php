@@ -4,6 +4,7 @@
         require_once("./populateDatabase.php");
         require_once("./makeDesignDoc.php");
         require_once("./findTwitterNames.php");
+        require_once("./putTwitterScholarsListInDB.php");
         $config = new Zend_Config_Ini(CONFIG_PATH);
         $couch = new Couch_Client($config->db->dsn, $config->db->name);
         
@@ -13,7 +14,7 @@
         
         /*setup the database queries we can use
          */
-        makeDesignDoc($couch, $config);
+//        makeDesignDoc($couch, $config);
         
         /* print a list of the duplicated names; we'll manually go through these and
          * figure out which ones are redundant with others and mark them accordingly
@@ -26,8 +27,16 @@
          * to their name in the DB.
          */
 //        findTwitterNames($couch, $config);
-            
-        
+
+        /* manually inspect the results of the user search, looking at locations,
+         * description, timezones, and where appropriate pictures.
+         * Put the matches as "id, twitter_user_key" in a text file called twitter_scholars.txt.
+         */
+//        echo $couch->getList("main", "judge_user_search_results", "user_search_results");
+
+        /* upload twitter_scholars.txt to the database
+         */
+        putTwitterScholarsListInDB($couch, $config);
 
 
 

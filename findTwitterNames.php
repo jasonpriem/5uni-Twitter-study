@@ -26,15 +26,18 @@ function findTwitterNames(Couch_Client $couch, Zend_Config $config){
             foreach($res as $v){
                 if (!$v->name) { // this is generally an "over capacity" page...
                     echo "Fail: Twitter returned something that's not a Twitter user...\n";
+                    return false;
                 }
                 $twitterUsers[] = $v;
             }
             $doc->twitter_users = $twitterUsers;
             $couch->storeDoc($doc);
             echo count($res->user) . " Twitter users saved for scholar " . $doc->_id . "\n";
+            return true;
         } 
         else {
             echo "Fail: " . $res->error . "\n";
+            return false;
         }
 
 
