@@ -1,233 +1,39 @@
-00030
-00031
-00045
-00061
-00251
-00264
-00317
-00318
-00330
-00337
-00422
-00461
-00514
-00533
-00553
-00604
-00622
-00691
-00701
-00709
-00716
-00728
-00733
-00758
-00800
-00868
-00966
-00970
-00989
-00993
-01023
-01040
-01093
-01100
-01109
-01123
-01156
-01165
-01165
-01199
-01289
-01289
-01305
-01315
-01356
-01467
-01640
-01730
-01734
-01838
-01910
-01915
-01971
-01975
-02023
-02034
-02046
-02060
-02064
-02112
-02145
-02198
-02222
-02329
-02239
-02265
-02308
-02319
-02341
-02344
-02360
-02364
-02366
-02377
-02400
-02405
-02431
-02451
-02445
-02485
-02489
-02503
-02564
-02585
-02703
-02713
-02763
-02787
-02815
-02851
-02853
-02885
-02914
-02986
-02993
-02995
-03006
-03031
-03124
-03130
-03147
-03162
-03178
-03199
-03227
-03240
-03240
-03280
-03306
-03321
-03420
-03469
-03485
-03517
-03519
-03599
-03667
-03922
-03956
-04010
-04018
-04031
-04119
-04127
-04219
-04271
-04296
-04333
-04423
-04484
-04521
-04656
-04712
-04733
-04754
-04832
-04887
-04910
-04969
-05010
-05013
-05020
-05026
-05037
-05042
-05058
-05290
-05612
-05621
-05654
-05666
-05772
-05841
-05845
-05925
-05929
-05946
-05974
-06129
-06173
-06200
-06204
-06205
-06286
-06306
-06308
-06369
-06398
-06494
-06677
-06683
-06713
-06720
-06754
-06756
-06765
-06770
-06771
-06784
-06787
-06851
-06924
-07050
-07099
-07132
-07168
-07169
-07184
-07186
-07224
-07340
-07422
-07434
-07450
-07536
-07634
-07930
-08019
-08097
-08133
-08286
-08313
-08340
-08398
-08407
-08413
-08428
-08437
-08502
-08525
-08619
-08695
-08769
-08829
-08872
-08894
-08910
-08916
-08937
-08938
-09011
-09029
-09045
-09083
-09099
-09129
-09189
-09220
-09228
-09246
-09320
-09328
-09345
+{
+    "id": "15810838",
+    "name": "Dave Richeson",
+    "screen_name": "divbyzero",
+    "location": {},
+    "description": "I'm a math professor at Dickinson College and the author of Euler's Gem (@eulersgem). I'm interested in mathematics, teaching, and technology.",
+    "profile_image_url": "http://a2.twimg.com/profile_images/80354200/twpic_normal.jpg",
+    "profile_image_url_https": "https://si0.twimg.com/profile_images/80354200/twpic_normal.jpg",
+    "url": "http://divisbyzero.com",
+    "protected": "false",
+    "followers_count": "1959",
+    "profile_background_color": "000000",
+    "profile_text_color": "8c8c8c",
+    "profile_link_color": "2FC2EF",
+    "profile_sidebar_fill_color": "252429",
+    "profile_sidebar_border_color": "181A1E",
+    "friends_count": "835",
+    "created_at": "Mon Aug 11 17:39:51 +0000 2008",
+    "favourites_count": "185",
+    "utc_offset": "-18000",
+    "time_zone": "Eastern Time (US & Canada)",
+    "profile_background_image_url": "http://a3.twimg.com/profile_background_images/6018520/School_of_Athens2.jpg",
+    "profile_background_image_url_https": "https://si0.twimg.com/profile_background_images/6018520/School_of_Athens2.jpg",
+    "profile_background_tile": "true",
+    "profile_use_background_image": "true",
+    "notifications": "false",
+    "geo_enabled": "false",
+    "verified": "false",
+    "following": "false",
+    "statuses_count": "3221",
+    "lang": "en",
+    "contributors_enabled": "false",
+    "follow_request_sent": "false",
+    "listed_count": "228",
+    "show_all_inline_media": "false",
+    "default_profile": "false",
+    "default_profile_image": "false",
+    "is_translator": "false"
+}

@@ -6,6 +6,7 @@
         require_once("./findTwitterNames.php");
         require_once("./putTwitterScholarsListInDB.php");
         require_once("./getTweets.php");
+        require_once("./removeTweets.php");
         $config = new Zend_Config_Ini(CONFIG_PATH);
         $couch = new Couch_Client($config->db->dsn, $config->db->name);
         
