@@ -1,3 +1,5 @@
+library(digest)
+
 # get the data
 tweets <- read.csv("~/projects/5uni_twitter/tweets_from_db.csv", header=T, colClasses=c("character", "character", "character", "character"))
 scholars <- read.csv("~/projects/5uni_twitter/scholars_from_db.csv", header=T, colClasses="character")
@@ -6,16 +8,26 @@ scholars <- read.csv("~/projects/5uni_twitter/scholars_from_db.csv", header=T, c
 tweets$created_at <- as.POSIXct(as.character(tweets$created_at), format = "%a %b %d %H:%M:%S +0000 %Y", tz="GMT")
 scholars$dept<-sub("Department of ", "", scholars$dept)
 
+
 # make a list of tweets by creator, limited to the latest 20 tweets each, and convert it to a data frame
 tweets.byCreator <- lapply(unique(tweets$scholar), function(scholar) tweets[tweets$scholar == scholar,] )
 tweets.byCreator<- lapply(tweets.byCreator, function(tweets) tweets[rev(order(tweets$created_at)),][1:min(20, nrow(tweets)),])
 tweets <- do.call("rbind", tweets.byCreator)
 
-# add author metadata to the tweets
+# add author department to the tweets
 tweets<-merge(data.frame(scholar=scholars$scholar, dept=scholars$dept), tweets, all.y=TRUE, by="scholar")
 
-# reorder and save
-tweets<-cbind(tweets[c(1,3,4,2,5)])
+# shuffle 
+tweets$hash <- apply(tweets, 1, function(x) digest(x["id"], algo="md5"))
+head(tweets)
+tweets<-tweets[order(tweets$hash),]
+tweets<-cbind(tweets[c(6,1,3,4,2,5)])
+
+# save the first 500 for ICR
+write.csv(tweets[100:600,], file="~/projects/5uni_twitter/tweets_icr1.csv", row.names=F)
+
+# save
 write.csv(tweets, file="~/projects/5uni_twitter/tweets_to_code.csv", row.names=F)
+
 
 
