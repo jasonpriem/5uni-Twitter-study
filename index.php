@@ -16,7 +16,7 @@
         
         /*setup the database queries we can use
          */
-//        makeDesignDoc($couch, $config);
+        makeDesignDoc($couch, $config);
         
         /* print a list of the duplicated names; we'll manually go through these and
          * figure out which ones are redundant with others and mark them accordingly
@@ -43,12 +43,5 @@
          /* Get the tweets for each user account that we've identified as belonging to a 
           * scholar in our sample, saving them in the DB
          */
-         getTweets($couch, $config);
-
-
-
-
-
-
-
-      ?>
+//         getTweets($couch, $config);
+?>

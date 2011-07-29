@@ -28,7 +28,7 @@ function strMinusOne($str){
  * @param Couch_Client $couch
  * @param Zend_Config $config
  */
-function getTweets(Couch_Client $couch, Zend_Config $config, $i=0){
+function getTweets(Couch_Client $couch, Zend_Config $config){
     $tweetsPerPage = 200;
 
     // first, we get a twitter account to retrieve tweets for.
@@ -67,42 +67,47 @@ function getTweets(Couch_Client $couch, Zend_Config $config, $i=0){
         'accessToken' => $token
     ));
 
+    try {
+        $res = $twitter->status->userTimeline($twitterApiArgs);
+        $maxId = (isset($twitterApiArgs['max_id'])) ? $twitterApiArgs['max_id'] : "none";
+        echo date('H:i j M ') . ", scholar ". $doc->_id
+                . " ($screenName) with max_id: '$maxId'...";
 
-    $res = $twitter->status->userTimeline($twitterApiArgs);
-    echo date('H:i j M ') . ", scholar ". $doc->_id
-            . " ($screenName) with max_id: '{$twitterApiArgs['max_id']}'...";
-
-    $tweets = array();
-    $protected = false;
-    if (!isset($res->error)){ //no errors, get the tweets
-        foreach($res as $v){
-            if (!$v->text) { // this is generally an "over capacity" page...
-                throw new Exception("Fail: Twitter returned something that's not a tweet...\n");
+        $tweets = array();
+        $protected = false;
+        if (!isset($res->error)){ //no errors, get the tweets
+            foreach($res as $v){
+                if (!$v->text) { // this is generally an "over capacity" page...
+                    throw new Exception("Fail: Twitter returned something that's not a tweet...");
+                }
+                $tweets[] = $v;
             }
-            $tweets[] = $v;
+        }
+        elseif ($res->error == 'Not authorized'){ // profile is protected, do nothing
+            $protected = true;
+        }
+        else { // an error we probably care about, like over rate-limit
+            throw new Exception("Fail: '" .$res->error. "'");
+        }
+
+        $doc->tweets = array_merge($doc->tweets, $tweets);
+        if (count($tweets) == 0){
+            $doc->got_all_tweets = true;
+        }
+        try {
+            $couch->storeDoc($doc);
+            echo count($tweets). " tweets saved";
+            echo ($protected) ? " (protected).\n" : ".\n";
+        }
+        catch(Exception $e){
+            throw $e;
         }
     }
-    elseif ($res->error == 'Not authorized'){ // profile is protected, do nothing
-        $protected = true;
+    catch(Exception $e) {
+        echo $e->getMessage() . "\n";
     }
-    else { // an error we probably care about, like over rate-limit
-        throw new Exception("Fail: '" .$res->error. "'\n");
-    }
-
-    $doc->tweets = array_merge($doc->tweets, $tweets);
-    if (count($tweets) == 0){
-        $doc->got_all_tweets = true;
-    }
-    try {
-        $couch->storeDoc($doc);
-        echo count($tweets). " tweets saved";
-        echo ($protected) ? " (protected).\n" : ".\n";
-    }
-    catch(Exception $e){
-        echo "Couldn't store doc: '{$e->getMessage}'";
-    }
-    sleep(5);
-    return ($i < 7) ? getTweets($couch, $config, $i+1) : true;
+    
+    return true;
 
 }
 
