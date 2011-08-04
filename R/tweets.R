@@ -15,7 +15,7 @@ tweets.byCreator<- lapply(tweets.byCreator, function(tweets) tweets[rev(order(tw
 tweets <- do.call("rbind", tweets.byCreator)
 
 # add author department to the tweets
-tweets<-merge(data.frame(scholar=scholars$scholar, dept=scholars$dept), tweets, all.y=TRUE, by="scholar")
+tweets<-merge(data.frame(scholar_id=scholars$scholar_id, dept=scholars$dept), tweets, all.y=TRUE, by="scholar_id")
 
 # shuffle and save
 tweets$hash <- apply(tweets, 1, function(x) digest(x["id"], algo="md5")) # for main coding, training
