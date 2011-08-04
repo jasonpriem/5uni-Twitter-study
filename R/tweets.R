@@ -2,7 +2,7 @@ library(digest)
 
 # get the data
 tweets <- read.csv("~/projects/5uni_twitter/tweets/tweets_from_db.csv", header=T, colClasses=c("character", "character", "character", "character"))
-scholars <- read.csv("~/projects/5uni_twitter/scholars_from_db.csv", header=T, colClasses="character")
+scholars <- read.csv("~/projects/5uni_twitter/scholars/scholars_from_db.csv", header=T, colClasses="character")
 
 # tidy columns
 tweets$created_at <- as.POSIXct(as.character(tweets$created_at), format = "%a %b %d %H:%M:%S +0000 %Y", tz="GMT")

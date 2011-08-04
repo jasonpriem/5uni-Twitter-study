@@ -4,14 +4,6 @@
 function(doc){
     if (typeof doc.name_string == "string") { // the doc describes a scholar
 
-        // don't emit users marked as redundant:
-        try {
-            if (doc.is_redundant) return false;
-        }
-        catch (e){
-            return false
-        }
-
         stringify = function(x){
             if (typeof x == "object") {
                 return "";
@@ -30,6 +22,7 @@ function(doc){
 
         var ret = {
             scholar_id: doc._id,
+            is_redundant: doc.is_redundant,
             dept: doc.dept,
             institution: doc.institution,
             name: doc.name_string,

@@ -1,4 +1,4 @@
-# ctrl+shift+J runs this whole file; ctrl+J runs the line the curser is on.
+
 library(concord)
 library(digest)
 tweets <- read.csv("~/projects/5uni_twitter/tweets/tweets_all_coded.csv", header=T, colClasses=c("character"))
@@ -20,3 +20,5 @@ tweets.icr.k <- read.csv("~/projects/5uni_twitter/tweets/tweets_icr3_k8lin_coded
 tweets.icr.j <- tweets.icr[274:410,] # manually check which rows are in the k8lin icr sample...
 codes<-cbind(factor(tweets.icr.j$code), factor(tweets.icr.k$code))
 cohen.kappa(codes, "score")
+
+cbind(tweets.icr.j$code, tweets.icr.k$code)
