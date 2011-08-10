@@ -33,7 +33,8 @@ function(doc){
             tw_protected: (user) ? user['protected'] : "NA",
             tw_followers_count: (user) ? user.followers_count : "NA",
             tw_friends_count: (user) ? user.friends_count : "NA",
-            tw_statuses_count: (user) ? user.statuses_count : "NA" // this may not match the number of tweets gathered, 'cos deleted tweets are included...
+            tw_statuses_count: (user) ? user.statuses_count : "NA", // this may not match the number of tweets gathered, 'cos deleted tweets are included...
+            tw_created_at: (user) ? user.created_at : "NA"
         }
 
 
