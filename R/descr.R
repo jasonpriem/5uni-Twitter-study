@@ -2,50 +2,62 @@ library(ggplot2)
 library(gmodels)
 library(vcd)
 library(RColorBrewer)
-tweets <- read.csv("~/projects/5uni_twitter/tweets/tweets_all_coded.csv", header=T, colClasses=c("character", "character", "character", "character"))
-schols <- read.csv("~/projects/5uni_twitter/scholars/scholars_from_db.csv", header=T, colClasses=c("character"))
+options(width=190)
+tb <- theme_blank()
+tw <- read.csv("~/projects/5uni_twitter/tweets/tweets_all_coded.csv", header=T, colClasses=c("character"))
+s <- read.csv("~/projects/5uni_twitter/scholars/scholars_from_db.csv", header=T, colClasses=c("character"))
 
 # format the datasets
-tweets$code <- factor(tweets$code)
-tweets$scholar_id <- (as.numeric(tweets$scholar_id))
-tweets$last20[tweets$last20=="1"] <- TRUE
-tweets$last20[tweets$last20=="0"] <- FALSE
 
-schols$scholar_id <- (as.numeric(schols$scholar_id))
-schols$tw_statuses_count <- as.numeric(schols$tw_statuses_count)
-schols$superdiscipline[schols$superdiscipline=="natural science"]<-"natural_science"
-schols$twitter_users_count <- as.numeric(schols$twitter_users_count)
-schols$tw_protected <- as.logical(schols$tw_protected)
-schols$tw_friends_count <- as.numeric(schols$tw_friends_count)
+tw$code <- factor(tw$code)
+tw$scholar_id <- (as.numeric(tw$scholar_id))
+tw$last20 <- as.logical(as.numeric(tw$last20))
+tw$created_at <- as.POSIXct(tw$created_at, "GMT")
 
+s$scholar_id <- (as.numeric(s$scholar_id))
+s$is_redundant <- as.logical(as.numeric(s$is_redundant))
+s$superdiscipline[s$superdiscipline=="natural science"]<-"natural_science"
+s$twitter_users_count <- as.numeric(s$twitter_users_count)
+s$tw_protected <- as.logical(s$tw_protected)
+s$tw_statuses_count <- as.numeric(s$tw_statuses_count)
+s$tw_created_at <- as.POSIXct(s$tw_created_at, format = "%a %b %d %H:%M:%S +0000 %Y", tz="GMT")
+s$rank<-factor(s$rank)
+s$superdiscipline <- factor(s$superdiscipline)
+levels(s$superdiscipline) <- c("applied/professional", "formal science", "humanities", "natural science", "social science")
 
+# add age/date columns
+collection.time <- as.numeric(as.POSIXct("2011-07-28 15:00", "GMT")) # UNIX timestamp when we got the tweets
+tw$age <- (collection.time - as.numeric(tw$created_at)) / 86400 # each tweet's age in days
+s$tw_age <- (collection.time - as.numeric(s$tw_created_at)) / 86400 # each twitter acct's age in days
 
-# schols in sample
+# scholars in sample
 #########################################################################
 # 1a: Forming the sample: removing duplicate names
-redund.not <- schols[schols$is_redundant == 0,]
-redund.is <- schols[schols$is_redundant == 1,]
-(nrow(redund.not) + nrow(redund.is)) - nrow(schols) # sanity check...
+redund.not <- s[s$is_redundant == 0,]
+redund.is <- s[s$is_redundant == 1,]
+(nrow(redund.not) + nrow(redund.is)) - nrow(s) # sanity check...
 nrow(redund.is) # discarded:
-schols <- redund.not
-nrow(schols) # we were left with this many: 
+s <- redund.not
+nrow(s) # we were left with this many: 
 
 # 1b:Forming the sample: removing common names?
-common <- schols[schols$twitter_users_count == 20,]
-uncommon <- schols[schols$twitter_users_count < 20,]
-(nrow(common) + nrow(uncommon)) - nrow(schols)
+common <- s[s$twitter_users_count == 20,]
+uncommon <- s[s$twitter_users_count < 20,]
+(nrow(common) + nrow(uncommon)) - nrow(s)
 nrow(common) # discarded:
-schols <- uncommon 
-nrow(schols) # were left with this many:
+s <- uncommon 
+nrow(s) # were left with this many:
 
 # 2: Describing the sample:
-CrossTable(schols$rank, schols$superdiscipline, prop.t=F) # see http://intersci.ss.uci.edu/wiki/index.php/R_CrossTab,_gmodels_package for docs
+CrossTable(s$rank, s$superdiscipline, prop.t=F) # see http://intersci.ss.uci.edu/wiki/index.php/R_CrossTab,_gmodels_package for docs
 # looks like postdoc isn't that important (and all in nat_sci), we'll roll it into doctoral:
-schols$rank[schols$rank %in% c("doctoral", "postdoc")] <- "nonfaculty"
-CrossTable(schols$rank, schols$superdiscipline, prop.t=F)
+
+levels(s$rank)
+levels(s$rank) <- c("nonfaculty", "faculty", "nonfaculty")
+CrossTable(s$rank, s$superdiscipline, prop.t=F)
 # visualise the makup of the sample
-schols.t <- table(schols$superdiscipline, schols$rank)
-mosaicplot(schols.t, color=c("pink", "lightblue"), off=c(4, 2), las=3, cex.axis=1)
+s.t <- table(s$superdiscipline, s$rank)
+mosaicplot(s.t, color=c("pink", "lightblue"), off=c(4, 2), las=3, cex.axis=1)
 
 
 
@@ -53,44 +65,42 @@ mosaicplot(schols.t, color=c("pink", "lightblue"), off=c(4, 2), las=3, cex.axis=
 
 # Twitter accounts in sample
 ##########################################################################
-sum(schols$twitter_users_count) 
+sum(s$twitter_users_count) 
 # of these 9139 accounts had no descr, url, or location, and 390 were celebrities that were 20 oft-returned celebs
 # (src: code/php/couchdb/views/user_search_results.js)
 # This left 7648 profiles to check mostly manually (made limited use of timezone as an automated filter)
 17177 - (9139 + 390 + 7648) # sanity check, should be 0
 
-st <- schols[!is.na(schols$tw_screen_name),]
-nrow(st) # schols from our sample with Twitter accts
-nrow(st) / nrow(schols) # % schols with Twitter accts
+s.acct <- s[!is.na(s$tw_screen_name),]
+nrow(s.acct) # s from our sample with Twitter accts
+nrow(s.acct) / nrow(s) # % s with Twitter accts
 
 # let's look at accounts with no tweets
-st.silent <- subset(st, tw_statuses_count==0)
-nrow(st.silent) # have Twitter acct but no tweets
-nrow(st.silent) / nrow(st) # % silent twitter accts
-nrow(subset(st.silent, tw_friends_count >= 10)) # silent, but probably is (or was) used for reading
+s.acct.silent <- subset(s.acct, tw_statuses_count==0)
+nrow(s.acct.silent) # have Twitter acct but no tw
+nrow(s.acct.silent) / nrow(s.acct) # % silent twitter accts
+nrow(subset(s.acct.silent, tw_friends_count >= 10)) # silent, but probably is (or was) used for reading
 
 # now protected accounts (a few of these are included in the silent count as well)
-st.protected <- subset(st, tw_protected==TRUE)
-nrow(st.protected)
-table(st.protected$rank)
+s.acct.protected <- subset(s.acct, tw_protected==TRUE)
+nrow(s.acct.protected)
+table(s.acct.protected$rank)
 
-# remove silent and protected accounts (everyone with no public tweets)
-st.with.public.tweets <- subset(st, scholar_id %in% tweets$scholar_id)
-nrow(st) - nrow(st.with.public.tweets) # getting rid of this many accts with no public tweets
-nrow(st.with.public.tweets) # keeping this many
-nrow(st.with.public.tweets) / nrow(schols) # % schols with public tweets
-st.no.public.tweets <- st
-st <- st.with.public.tweets
+# remove silent and protected accounts (everyone with no public tw)
+s.acct.pub <- subset(s.acct, scholar_id %in% tw$scholar_id)
+nrow(s.acct) - nrow(s.acct.pub) # getting rid of this many accts with no public tw
+nrow(s.acct.pub) # keeping this many
+nrow(s.acct.pub) / nrow(s) # % scholars with a public tweet
+sp <- s.acct.pub
 
 
 
 # Find "Active" Twitter accounts in sample (have tweeted recently)
 ##########################################################################
-collection.time <- as.numeric(as.POSIXct("2011-07-28 15:00", "GMT")) # UNIX timestamp when we got the tweets
-tweets$age <- (collection.time - as.numeric(as.POSIXct(tweets$created_at, "GMT"))) / 86400 # each tweet's age in days
 
-tweets.last20only <- subset(tweets, last20==TRUE) # removes a bunch of older tweets, saves time
-st$latest_tweet_age <- sapply(st$scholar_id, function(id) sort(as.vector(tweets.last20only[tweets.last20only$scholar_id==id,"age"]))[1])
+
+tw.last20only <- subset(tw, last20==TRUE) # removes a bunch of older tweets, saves time
+sp$latest_tweet_age <- sapply(sp$scholar_id, function(id) sort(as.vector(tw.last20only[tw.last20only$scholar_id==id,"age"]))[1])
 
 # finds the biggest difference between any two adjacent numbers in a given vector
 max.gap <- function(x){
@@ -101,152 +111,202 @@ max.gap <- function(x){
    }
    return(ret)
 }
-st$max_gap<- sapply(st$scholar_id, function(id) max.gap(tweets[tweets$scholar_id==id, "age"]))
+sp$max_gap<- sapply(sp$scholar_id, function(id) max.gap(tw[tw$scholar_id==id, "age"]))
 
-# take a look at the breakdown for last tweets
-breaks.span <- (max(st$latest_tweet_age) - min(st$latest_tweet_age)) / 30
-hist(st$latest_tweet_age, breaks=seq(0, max(st$latest_tweet_age)+breaks.span, by=breaks.span))
+# take a look at the breakdown for last tweet
+breaks.span <- (max(sp$latest_tweet_age) - min(sp$latest_tweet_age)) / 30
+hist(sp$latest_tweet_age, breaks=seq(0, max(sp$latest_tweet_age)+breaks.span, by=breaks.span))
 
-# we'll mark "active" users: it's been fewer than g OR d days since their last tweet (where g = user's longest previous interval between tweets, and d = 90)
-st.act <- subset(st, latest_tweet_age < 90 | latest_tweet_age < max_gap)
-st.act.sporadic <- (subset(st.act, latest_tweet_age >= 90))
-st.abandonded <- subset(st, !(st$scholar_id %in% st.act$scholar_id))
+# we'll mark "active" users: it's been fewer than g OR d days since their last tweet (where g = user's longest previous interval between tw, and d = 90)
+sp.act <- subset(sp, latest_tweet_age < 90 | latest_tweet_age < max_gap)
+sp.act.sporadic <- (subset(sp.act, latest_tweet_age >= 90))
+sp.abandonded <- subset(sp, !(sp$scholar_id %in% act$scholar_id))
 
-
-nrow(st) - nrow(st.act) # inactive accounts
-1 - (nrow(st.act) / nrow(st)) # % abandoned accts (tweeted at least once, but now inactive)
-schols$act <- FALSE
-schols$act[schols$scholar_id %in% st.act$scholar_id] <- TRUE
+nrow(sp) - nrow(sp.act) # inactive accounts
+1 - (nrow(sp.act) / nrow(sp)) # % abandoned accts (tweeted at least once, but now inactive)
+act <- sp.act # shortcut name, since we'll be using this active scholar list a lot
+s$act <- FALSE
+s$act[s$scholar_id %in% act$scholar_id] <- TRUE
 
 # Examine effects of discipline and rank on proportion of active tweeters
 ##########################################################################
 
 # First, look at discipline
-disc.t <- table(schols$superdiscipline, schols$act)
-disc.t
+disc.t <- table(s$superdiscipline, s$act)
 disc.ct <- CrossTable(disc.t, chisq=TRUE)
 disc.t.f <- as.data.frame(disc.ct$prop.col, stringsAsFactors=TRUE)
 names(disc.t.f) <- c("discipline", "active", "count")
-levels(disc.t.f$active) <- c("Nontweeting", "Tweeting")
+levels(disc.t.f$active) <- c("Nontweeting\nscholars", "Tweeting\nscholars")
+disc.t.f$discipline <- factor(disc.t.f$discipline, levels=levels(disc.t.f$discipline)[c(1,5,2,4,3)])
 
 # is discipline significant?
 disc.ct$chisq
 
 # plot % on twitter vs % in sample for discipline
-tg <- ggplot(disc.t.f, aes(discipline, count))
-tg <- tg +  geom_bar(position="dodge", aes(fill=active)) + coord_flip()  + ylab("percent of sample")
-tg <- tg + scale_y_continuous(formatter="percent") + opts(axis.title.y=theme_blank())+ opts(legend.title = theme_blank())
+tg <- ggplot(disc.t.f, aes(active, count, fill=discipline))
+tg <- tg + scale_fill_grey(start=0, end=.95) +  geom_bar(position="fill", colour="white") + ylab("percent of sample") + theme_bw()
+tg <- tg + scale_y_continuous(formatter="percent") + opts(axis.title.x=tb)+ opts(legend.title = tb)
+tg <- tg + opts(panel.grid.major=tb)+ opts(panel.grid.minor=tb) + opts(axis.ticks=tb) + opts(panel.border=tb)
 tg
 
 # second, we'll look at rank
-rank.t <- table(schols$rank, schols$act)
+rank.t <- table(s$rank, s$act)
 rank.ct <- CrossTable(rank.t, chisq=TRUE)
 rank.t.f <- as.data.frame(rank.ct$prop.col, stringsAsFactors=TRUE)
 names(rank.t.f) <- c("rank", "active", "count")
-levels(rank.t.f$active) <- c("Nontweeting", "Tweeting")
+levels(rank.t.f$active) <- c("Nontweeting\nscholars", "Tweeting\nscholars")
 
 # plot % on twitter vs % in sample for rank
-tg <- ggplot(rank.t.f, aes(rank, count))
-tg <- tg +  geom_bar(position="dodge", aes(fill=active)) + coord_flip()  + ylab("percent of sample")
-tg <- tg + scale_y_continuous(formatter="percent") + opts(axis.title.y=theme_blank())+ opts(legend.title = theme_blank())
+tg <- ggplot(rank.t.f, aes(active, count, fill=rank))
+tg <- tg + scale_fill_grey(start=.2, end=.8) +  geom_bar(position="fill", colour="white") + ylab("percent of sample") + theme_bw()
+tg <- tg + scale_y_continuous(formatter="percent") + opts(axis.title.x=tb)+ opts(legend.title = tb)
+tg <- tg + opts(panel.grid.major=tb)+ opts(panel.grid.minor=tb) + opts(axis.ticks=tb) + opts(panel.border=tb)
 tg
 
 # look at discipline and rank together
-st.act.t <- table(st.act$superdiscipline, st.act$rank) / table(schols$superdiscipline, schols$rank)
-st.act.t
-mosaicplot(st.act.t, color=c("pink", "lightblue"), off=c(4, 2), las=3, cex.axis=1)
+act.t <- table(act$superdiscipline, act$rank) / table(s$superdiscipline, s$rank)
+act.t
+mosaicplot(act.t, color=c("pink", "lightblue"), off=c(4, 2), las=3, cex.axis=1)
 
-# Frequency of schols' tweeting
+
+
+# Frequency of scholars' tweeting
+##########################################################################
+s$tweets_per_day <-  s$tw_statuses_count / s$tw_age
+act <- subset(s, act==TRUE)
+
+plot(rev(sort(act$tw_statuses_count)), log="y") # looks like number of tweets is log-normal-distributed; let's check:
+act$log_tw_statuses_count <- log(act$tw_statuses_count)
+qqnorm(act$log_tw_statuses_count)
+qqline(act$log_tw_statuses_count)
+shapiro.test(act$log_tw_statuses_count)
+
+model <- lm(act$log_tw_statuses_count ~ act$tw_age + act$superdiscipline + act$rank)
+# plot(model)
+summary(model)
+
+
+
+# tweet content
 ##########################################################################
 
-# because of API limit, we're missing tweets for the really heavy users; we'll add fake ones
-counts <- as.data.frame(table(tweets$scholar_id))
-names(counts) <- c("scholar_id", "num_tweets_collected")
-schols <- merge(schols, counts, all.x=TRUE, by="scholar_id")
-schols[is.na(schols$num_tweets_collected), "num_tweets_collected"] <- 0
-
-fails <- (subset(schols.copy, tw_statuses_count != num_tweets_collected, select=c(scholar_id, tw_statuses_count, num_tweets_collected)))
-plot(fails$tw_statuses_count, fails$num_tweets_collected)
-
-sh <- subset(schols, tw_statuses_count > 3200 & tw_protected==FALSE)
-sh$first_tweet_age <- sapply(sh$scholar_id, function(id) rev(sort(as.vector(tweets[tweets$scholar_id==id,"age"])))[1])
-sh
+# simplify the codes (uncoded and non-english tweets are NA), add rank and discipline cols
+tw$scholarly <-NA
+tw$scholarly[tw$code %in% c("ki","kpp","kpn","l")] <- TRUE
+tw$scholarly[tw$code %in% c("ns", "e")] <- FALSE
+s.rank_disc <- s[,c("scholar_id", "rank", "superdiscipline")]
+tw <- merge(tw, s.rank_disc, all.x=TRUE, by="scholar_id")
+tw.last20 <- subset(tw, last20==TRUE) # only tweets that we've coded
+names(tw.last20)
 
 
+# examine the sample
+subset(tw.last20, code=="not coded") # make sure all the tweets in the last20 are coded
+s.coded.num <- length(unique(tw.last20$scholar_id))
+s.coded.num - nrow(sp) # should be same as number of scholars with public tweets
 
+# remove tweets from inactive tweeters
+tw.last20.act <- (subset(tw.last20, scholar_id %in% act$scholar_id))
+s.inactive.num <- s.coded.num - nrow(act) 
+s.inactive.num # throwing out tweets from this many inactive scholars
+tw.from.inactive.num <- nrow(tw.last20) - nrow(tw.last20.act) 
+tw.from.inactive.num # throwing out this many tweets from inactive scholars
+tw.from.inactive.num / nrow(tw.last20) # throwing out this much of the coded sample
+t20 <- tw.last20.act # all coded, none from inactive tweeters.
 
+# examing non-english tweets, then remove them
+t20.notenglish <- subset(t20, code=="ote")
+nrow(t20.notenglish) # count non-english tweets
+nrow(t20.notenglish) / nrow(t20) # percent non-english tweets
+act$ote_tweets_count <- sapply(act$scholar_id, function(x) nrow(subset(t20.notenglish, scholar_id == x)))
 
-sh$tw_created_at_posix <- as.POSIXct(as.character(sh$tw_created_at), format = "%a %b %d %H:%M:%S +0000 %Y", tz="GMT")
+act.ote <- subset(act, ote_tweets_count > 0)
+act.ote$tweets_coded_count <- sapply(act.ote$scholar_id, function(x) nrow(subset(t20, scholar_id==x)))
+act.ote$prop_ote_tweets <- act.ote$ote_tweets_count / act.ote$tweets_coded_count
+act.ote$scholar_id <- factor(act.ote$scholar_id, levels=act.ote$scholar_id[order(act.ote$prop_ote_tweets)])
+subset(act.ote, prop_ote_tweets==1)
 
-sh$acct_age <- as.vector(unclass(collection.time - sh$tw_created_at_posix))
-sh$blindspot_len <- as.vector(unclass(as.POSIXct(as.character(sh$first_tweet_date), tz="GMT") - sh$tw_created_at_posix)) # number of days clipped by twitter api
-sh
-sh$blindspot_tweets_ct <- sh$tw_statuses_count - 3200 
-sh$faketweets_spacing <- sh$blindspot_len / (sh$blindspot_tweets_ct + 1)
-make.faketweets <- function(start.age, end.age, num) {
-   start <- as.numeric(unclass(as.POSIXct(as.character(start))))
-   end <- as.numeric(unclass(as.POSIXct(as.character(end))))
-   ages <- seq(start+1, end, length.out=num+1)[-(num+1)]
-   return(ages / 86400)
-}
-(make.faketweets(sh$tw_created_at_posix[1], sh$first_tweet_date[1],  5))
-as.numeric(unclass(as.POSIXct(as.character(sh$first_tweet_date[1]), tz="GMT"))) / 86400
-as.numeric(unclass(as.POSIXct(as.character((sh$tw_created_at_posix[1])), tz="GMT"))) / 86400
-as.POSIXct(as.character(sh$first_tweet_date[1]))
+g <- ggplot(act.ote, aes(factor(scholar_id), prop_ote_tweets)) + geom_bar(size=.2) + scale_y_continuous(formatter="percent", breaks=c(0, .5, 1))
+g + opts(axis.ticks=tb, axis.title.y=tb, axis.text.x=tb, axis.title.x=tb, title="% non-english tweets per scholar", panel.grid.minor=tb)
 
+t20.eng <- subset(t20, code != "ote")
+nrow(t20.eng) # english tweets from active tweeters
+length(unique(t20.eng$scholar_id)) # active twitter users with at least one english tweet
+t20 <- t20.eng
 
+# relevel 
+t20$code <- factor(t20$code)
+levels(t20$code) <- c("scholars' experience", "is knowledge", "knowledge pointer (not reviewed)", "knowledge pointer (peer reviewed)", "logistic", "not scholarly")
+t20$code <- factor(t20$code, levels=levels(t20$code)[order(table(t20$code))])
 
+# examine category breakdowns for the whole sample, then by rank, superdiscipline
+t20$all<-TRUE
+CrossTable(table(t20$code, t20$all))
+CrossTable(table(t20$scholarly, t20$all))
+ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))
 
-age<-seq(61, 100, length.out=5)[-5]
-age
+ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + facet_grid(. ~ superdiscipline) + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))
+ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + facet_grid(. ~ rank) + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))
 
-nrow(subset(tweets, scholar_id==9029, select=text))
+# figure out the percent scholarly tweets for each scholar in the active, english-tweeting coded tweets sample
+act.t20 <- subset(act, scholar_id %in% t20$scholar_id)
+t20[is.na(t20$scholarly),] # shouldn't be any NA's, because all uncoded and ote tweets are gone
+act.t20$perc_scholarly<-sapply(act.t20$scholar_id, function(x) nrow(subset(t20, scholarly==TRUE & scholar_id==x)) / nrow(subset(t20, scholar_id==x)))
+act.t20$scholar_id <- factor(act.t20$scholar_id, levels=act.t20$scholar_id[order(act.t20$perc_scholarly)])
+act.t20$scholar_id 
+act.t20$scholar_id[order(act.t20$perc_scholarly)]
 
+# examine differences in percentage scholarly tweets
+act.t20$superdiscipline <- factor(act.t20$superdiscipline, levels=levels(act.t20$superdiscipline)[order(tapply(act.t20$perc_scholarly, act.t20$superdiscipline,  mean))]) # order superdiscipline factor by mean perc_scholarly
 
+log(act.t20$perc_scholarly*10+1)
 
+plot(sort(act.t20$perc_scholarly*10 + 1), log="y")
 
+ggplot(act.t20, aes(log(act.t20$perc_scholarly*10 + 1))) + geom_density()
 
+ggplot(act.t20, aes(superdiscipline, perc_scholarly)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
+ggplot(act.t20, aes(rank, perc_scholarly)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
 
-
-
-
+superscholarly_tweeters <- act.t20[act.t20$perc_scholarly==1, "scholar_id"]
+subset(t20, scholar_id %in% superscholarly_tweeters, select=c("scholar_id", "text"))
 
 
 # visualise each user's twitter stream
 ##########################################################################
 # merge datasets
-tweets<-merge(tweets, st, all.x=TRUE, by="scholar_id")
+tw<-merge(tw, sp, all.x=TRUE, by="scholar_id")
 
-# order scholar_id factor by number of tweets
-tweets$scholar_id <- factor(tweets$scholar_id)
-statuses.per.schol <- unique(data.frame(id=tweets$scholar_id, statuses_count=tweets$tw_statuses_count))
-tweets$scholar_id <- factor(tweets$scholar_id, levels = levels(tweets$scholar_id)[(order(statuses.per.schol$statuses_count))])
+# order scholar_id factor by number of tw
+tw$scholar_id <- factor(tw$scholar_id)
+statuses.per.schol <- unique(data.frame(id=tw$scholar_id, statuses_count=tw$tw_statuses_count))
+tw$scholar_id <- factor(tw$scholar_id, levels = levels(tw$scholar_id)[(order(statuses.per.schol$statuses_count))])
 
 # add a column for simplified codes
-tweets$code.simple <- "not coded"
-tweets$code.simple[tweets$code %in% c("ki","kpp","kpn","l")] <- "scholarly"
-tweets$code.simple[tweets$code %in% c("ns", "e")] <- "not scholarly"
+tw$code.simple <- "not coded"
+tw$code.simple[tw$code %in% c("ki","kpp","kpn","l")] <- "scholarly"
+tw$code.simple[tw$code %in% c("ns", "e")] <- "not scholarly"
 
 # select data to plot
-tweets.toplot <- subset(tweets, scholar_id %in% sh$scholar_id)
-tweets.toplot$scholar_id <- factor(tweets.toplot$scholar_id)
+tw.toplot <- subset(tw, scholar_id %in% sp$scholar_id)
+tw.toplot$scholar_id <- factor(tw.toplot$scholar_id)
 
 # plot
-tg <- ggplot(tweets.toplot, aes(age, scholar_id))
-tg <- tg + geom_point(aes(colour=code.simple), size=1, shape=20)+ scale_x_continuous(trans="reverse", limits=c(max(tweets.toplot$age), 0))
+tg <- ggplot(tw.toplot, aes(age, scholar_id))
+tg <- tg + geom_point(aes(colour=code.simple), size=1, shape=20)+ scale_x_continuous(trans="reverse", limits=c(max(tw.toplot$age), 0))
 tg <- tg + scale_colour_manual(values=c("#aaaaaa", "blue", "red"))  + geom_vline(aes(x=0), color="red")
-tg <- tg + opts(panel.background = theme_blank())+ opts(panel.grid.minor= theme_line(size=.1, colour="#eeeeee")) 
-tg <- tg + opts(panel.grid.major=theme_blank()) + opts(panel.border=theme_rect(colour="white"))
-tg <- tg + opts(axis.text.y=theme_blank()) + opts(axis.ticks=theme_blank()) + opts(axis.title.y=theme_blank()) + opts(axis.title.x=theme_blank())
+tg <- tg + opts(panel.background = tb)+ opts(panel.grid.minor= theme_line(size=.1, colour="#eeeeee")) 
+tg <- tg + opts(panel.grid.major=tb) + opts(panel.border=theme_rect(colour="white"))
+tg <- tg + opts(axis.text.y=tb) + opts(axis.ticks=tb) + opts(axis.title.y=tb) + opts(axis.title.x=tb)
 tg <- tg + opts(plot.margin=unit(c(.1,.1,.1,.1), "cm"))
 tg
 
-schols.live <- schols[!is.na(schols$tw_statuses_count),]
-schols.live<-schols.live[order(schols.live$tw_statuses_count),]
-schols.live$quantile<-nrow(schols.live):1
+s.live <- s[!is.na(s$tw_statuses_count),]
+s.live<-s.live[order(s.live$tw_statuses_count),]
+s.live$quantile<-nrow(s.live):1
 
 
-g <- ggplot(schols.live, aes(quantile, tw_statuses_count))
+g <- ggplot(s.live, aes(quantile, tw_statuses_count))
 g + geom_point() 
 
 
@@ -254,4 +314,4 @@ g + geom_point()
 
 
 
-schols[schols$scholar_id==6771,]
+s[s$scholar_id==6771,]
