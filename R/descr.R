@@ -170,6 +170,9 @@ mosaicplot(act.t, color=c("pink", "lightblue"), off=c(4, 2), las=3, cex.axis=1)
 
 
 
+
+
+
 # Frequency of scholars' tweeting
 ##########################################################################
 s$tweets_per_day <-  s$tw_statuses_count / s$tw_age
@@ -187,7 +190,11 @@ summary(model)
 
 
 
-# tweet content
+
+
+
+
+# massage tweet content codes for analysis
 ##########################################################################
 
 # simplify the codes (uncoded and non-english tweets are NA), add rank and discipline cols
@@ -197,10 +204,8 @@ tw$scholarly[tw$code %in% c("ns", "e")] <- FALSE
 s.rank_disc <- s[,c("scholar_id", "rank", "superdiscipline")]
 tw <- merge(tw, s.rank_disc, all.x=TRUE, by="scholar_id")
 tw.last20 <- subset(tw, last20==TRUE) # only tweets that we've coded
-names(tw.last20)
 
-
-# examine the sample
+# sanity checks
 subset(tw.last20, code=="not coded") # make sure all the tweets in the last20 are coded
 s.coded.num <- length(unique(tw.last20$scholar_id))
 s.coded.num - nrow(sp) # should be same as number of scholars with public tweets
@@ -214,7 +219,7 @@ tw.from.inactive.num # throwing out this many tweets from inactive scholars
 tw.from.inactive.num / nrow(tw.last20) # throwing out this much of the coded sample
 t20 <- tw.last20.act # all coded, none from inactive tweeters.
 
-# examing non-english tweets, then remove them
+# examine non-english tweets, then remove them
 t20.notenglish <- subset(t20, code=="ote")
 nrow(t20.notenglish) # count non-english tweets
 nrow(t20.notenglish) / nrow(t20) # percent non-english tweets
@@ -239,37 +244,82 @@ t20$code <- factor(t20$code)
 levels(t20$code) <- c("scholars' experience", "is knowledge", "knowledge pointer (not reviewed)", "knowledge pointer (peer reviewed)", "logistic", "not scholarly")
 t20$code <- factor(t20$code, levels=levels(t20$code)[order(table(t20$code))])
 
+
+
+
+
+
+# analyze tweet content
+##########################################################################
+
 # examine category breakdowns for the whole sample, then by rank, superdiscipline
 t20$all<-TRUE
 CrossTable(table(t20$code, t20$all))
 CrossTable(table(t20$scholarly, t20$all))
 ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))
 
-ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + facet_grid(. ~ superdiscipline) + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))
-ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + facet_grid(. ~ rank) + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))
+df <- NULL
+fakerow <- NULL
+df <- as.data.frame(CrossTable(table(t20$code, t20$superdiscipline)))
+df$label <- round(df$prop.col.Freq*100)
+df$t.Var1 <- factor(df$t.Var1, levels=c(levels(df$t.Var1), ""))
+levels(df$t.Var2) <- c("apl/prof", "fml sci", "hum", "nat sci", "soc sci")
+fakerow <- df[1,]
+fakerow$t.Var1[1] <- ""
+fakerow$label[1] <- ""
+fakerow$prop.col.Freq[1] <- 0
+fakerow
+df <- rbind(fakerow, df)
+ggplot(df, aes(factor(t.Var2), factor(t.Var1), size=prop.col.Freq)) + geom_point(pch=20, colour="#dddddd") + geom_text(aes(label=label, size=.01)) + scale_area(to=c(1,30)) + opts(panel.background=tb, axis.ticks=tb,legend.position="none", axis.title.x=tb, axis.title.y=tb)
 
-# figure out the percent scholarly tweets for each scholar in the active, english-tweeting coded tweets sample
+df <- NULL
+fakerow <- NULL
+df <- as.data.frame(CrossTable(table(t20$code, t20$rank)))
+df$label <- round(df$prop.col.Freq*100)
+df$t.Var1 <- factor(df$t.Var1, levels=c(levels(df$t.Var1), ""))
+fakerow <- df[1,]
+fakerow$t.Var1[1] <- ""
+fakerow$label[1] <- ""
+fakerow$prop.col.Freq[1] <- 0
+df <- rbind(fakerow, df)
+ggplot(df, aes(factor(t.Var2), factor(t.Var1), size=prop.col.Freq)) + geom_point(pch=20, colour="#dddddd") + geom_text(aes(label=label, size=.04)) + scale_area(to=c(1,30)) + opts(panel.background=tb, axis.ticks=tb,legend.position="none", axis.title.x=tb, axis.title.y=tb)
+
+
+# figure out the number and percent of scholarly tweets for each scholar in the active, english-tweeting coded tweets sample
 act.t20 <- subset(act, scholar_id %in% t20$scholar_id)
 t20[is.na(t20$scholarly),] # shouldn't be any NA's, because all uncoded and ote tweets are gone
-act.t20$perc_scholarly<-sapply(act.t20$scholar_id, function(x) nrow(subset(t20, scholarly==TRUE & scholar_id==x)) / nrow(subset(t20, scholar_id==x)))
-act.t20$scholar_id <- factor(act.t20$scholar_id, levels=act.t20$scholar_id[order(act.t20$perc_scholarly)])
-act.t20$scholar_id 
-act.t20$scholar_id[order(act.t20$perc_scholarly)]
 
-# examine differences in percentage scholarly tweets
-act.t20$superdiscipline <- factor(act.t20$superdiscipline, levels=levels(act.t20$superdiscipline)[order(tapply(act.t20$perc_scholarly, act.t20$superdiscipline,  mean))]) # order superdiscipline factor by mean perc_scholarly
+act.t20$count<-sapply(act.t20$scholar_id, function(x) nrow(subset(t20, scholar_id==x)))
+act.t20$scholarly_count<-sapply(act.t20$scholar_id, function(x) nrow(subset(t20, scholarly==TRUE & scholar_id==x)))
+act.t20$scholarly_count_log <- log(act.t20$scholarly_count+1)
+act.t20$scholarly_perc <- act.t20$scholarly_count / act.t20$count
+act.t20$scholar_id <- factor(act.t20$scholar_id, levels=act.t20$scholar_id[order(act.t20$scholarly_perc)]) # order scholars by %scholarly tweets
 
-log(act.t20$perc_scholarly*10+1)
 
-plot(sort(act.t20$perc_scholarly*10 + 1), log="y")
+# There are more zeros for scholarly tweets than there should be, so the log transform doesn't work. Why is that?
+hist((act.t20$scholarly_count_log))
+shapiro.test(act.t20$scholarly_count_log)
 
-ggplot(act.t20, aes(log(act.t20$perc_scholarly*10 + 1))) + geom_density()
+hist(subset(act.t20, scholarly_count == 0, select=c(tw_age))[,1])
+act.t20$has20 <- FALSE
+act.t20$has20[act.t20$count == 20] <- TRUE
 
-ggplot(act.t20, aes(superdiscipline, perc_scholarly)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
-ggplot(act.t20, aes(rank, perc_scholarly)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
+ggplot(act.t20, aes(superdiscipline, scholarly_count_log)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
+ggplot(act.t20, aes(rank, scholarly_perc)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
 
-superscholarly_tweeters <- act.t20[act.t20$perc_scholarly==1, "scholar_id"]
+superscholarly_tweeters <- act.t20[act.t20$scholarly_perc==1, "scholar_id"]
 subset(t20, scholar_id %in% superscholarly_tweeters, select=c("scholar_id", "text"))
+
+
+# What factors predict number of scholarly tweets?
+model <- lm(act.t20$scholarly_count_log ~ act.t20$rank + act.t20$superdiscipline)
+summary(model)
+plot(model)
+
+
+boxcox(model)
+
+
 
 
 # visualise each user's twitter stream
