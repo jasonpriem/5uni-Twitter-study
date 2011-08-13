@@ -1,6 +1,7 @@
 library(ggplot2)
 library(gmodels)
 library(vcd)
+library(gridExtra)
 library(RColorBrewer)
 options(width=190)
 tb <- theme_blank()
@@ -244,7 +245,7 @@ t20$code <- factor(t20$code)
 levels(t20$code) <- c("scholars' experience", "is knowledge", "knowledge pointer (not reviewed)", "knowledge pointer (peer reviewed)", "logistic", "not scholarly")
 t20$code <- factor(t20$code, levels=levels(t20$code)[order(table(t20$code))])
 
-
+(tw.last20$scholarly)
 
 
 
@@ -300,68 +301,90 @@ act.t20$scholar_id <- factor(act.t20$scholar_id, levels=act.t20$scholar_id[order
 hist((act.t20$scholarly_count_log))
 shapiro.test(act.t20$scholarly_count_log)
 
-hist(subset(act.t20, scholarly_count == 0, select=c(tw_age))[,1])
 act.t20$has20 <- FALSE
 act.t20$has20[act.t20$count == 20] <- TRUE
+act.t20$has_schol_tweets <- FALSE
+act.t20$has_schol_tweets[act.t20$scholarly_count > 0] <- TRUE
+ggplot(act.t20, aes(has_schol_tweets, tw_age)) + geom_jitter(aes(colour=rank, shape=has20)) + scale_shape_manual(value=c(1, 16))
+round(prop.table(table(act.t20$has_schol_tweets, act.t20$institution), 2)*100)
+round(prop.table(table(act.t20$has_schol_tweets, act.t20$superdiscipline), 2)*100)
+round(prop.table(table(act.t20$has_schol_tweets, act.t20$rank), 2)*100) # looks like this is the culprit...
 
-ggplot(act.t20, aes(superdiscipline, scholarly_count_log)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
-ggplot(act.t20, aes(rank, scholarly_perc)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
+ggplot(act.t20, aes(scholarly_count_log)) + geom_density() + facet_grid(.~rank) # yep, the extra zeroes in nonfaculty are making the distribution wierd.
 
-superscholarly_tweeters <- act.t20[act.t20$scholarly_perc==1, "scholar_id"]
-subset(t20, scholar_id %in% superscholarly_tweeters, select=c("scholar_id", "text"))
-
+ 
+ 
 
 # What factors predict number of scholarly tweets?
-model <- lm(act.t20$scholarly_count_log ~ act.t20$rank + act.t20$superdiscipline)
+ggplot(act.t20, aes(superdiscipline, scholarly_perc)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
+ggplot(act.t20, aes(rank, scholarly_perc)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
+
+model <- lm(act.t20$scholarly_count ~ act.t20$count + act.t20$rank + act.t20$superdiscipline)
 summary(model)
-plot(model)
 
 
-boxcox(model)
 
 
 
 
 # visualise each user's twitter stream
 ##########################################################################
-# merge datasets
-tw<-merge(tw, sp, all.x=TRUE, by="scholar_id")
 
-# order scholar_id factor by number of tw
+# order scholar_id factor by acct age
 tw$scholar_id <- factor(tw$scholar_id)
-statuses.per.schol <- unique(data.frame(id=tw$scholar_id, statuses_count=tw$tw_statuses_count))
-tw$scholar_id <- factor(tw$scholar_id, levels = levels(tw$scholar_id)[(order(statuses.per.schol$statuses_count))])
+tw.levels <- levels(tw$scholar_id)
+ages <- sapply(tw.levels, function(x) sp[sp$scholar_id == x, "tw_age"])
+levels_by_age <- tw.levels[rev(order(ages))]
+tw$scholar_id <- factor(tw$scholar_id, levels = levels_by_age)
 
-# add a column for simplified codes
-tw$code.simple <- "not coded"
-tw$code.simple[tw$code %in% c("ki","kpp","kpn","l")] <- "scholarly"
-tw$code.simple[tw$code %in% c("ns", "e")] <- "not scholarly"
+tw$acct_age_order <- tw$scholar_id
+levels(tw$acct_age_order) <- 1:length(levels(tw$acct_age_order))
 
-# select data to plot
-tw.toplot <- subset(tw, scholar_id %in% sp$scholar_id)
-tw.toplot$scholar_id <- factor(tw.toplot$scholar_id)
+
+# add some cols:
+tw$created_at <- as.POSIXct(tw$created_at, format = "%a %b %d %H:%M:%S +0000 %Y", tz="GMT")
+collection.time <- as.POSIXct("2011-07-28 15:00", "GMT")
+nrows <- length(levels(tw$scholar_id))
+
 
 # plot
-tg <- ggplot(tw.toplot, aes(age, scholar_id))
-tg <- tg + geom_point(aes(colour=code.simple), size=1, shape=20)+ scale_x_continuous(trans="reverse", limits=c(max(tw.toplot$age), 0))
-tg <- tg + scale_colour_manual(values=c("#aaaaaa", "blue", "red"))  + geom_vline(aes(x=0), color="red")
-tg <- tg + opts(panel.background = tb)+ opts(panel.grid.minor= theme_line(size=.1, colour="#eeeeee")) 
-tg <- tg + opts(panel.grid.major=tb) + opts(panel.border=theme_rect(colour="white"))
-tg <- tg + opts(axis.text.y=tb) + opts(axis.ticks=tb) + opts(axis.title.y=tb) + opts(axis.title.x=tb)
-tg <- tg + opts(plot.margin=unit(c(.1,.1,.1,.1), "cm"))
-tg
-
-s.live <- s[!is.na(s$tw_statuses_count),]
-s.live<-s.live[order(s.live$tw_statuses_count),]
-s.live$quantile<-nrow(s.live):1
+tl <- ggplot(tw, aes(created_at, acct_age_order)) + geom_point(alpha=.3, size=.5, shape=20) + scale_x_datetime(major="1 year") + scale_y_discrete("Twitter accounts", breaks=seq(0, nrows, by=20)) + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.ticks=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"))
 
 
-g <- ggplot(s.live, aes(quantile, tw_statuses_count))
-g + geom_point() 
+# plot percent scholarly for each account
+# make a column for percent scholarly tweets for all scholars with public tweets
+sp$scholarly_perc <- sapply(sp$scholar_id, function(x) nrow(subset(tw.last20, scholar_id==x & scholarly==TRUE)) / nrow(subset(tw.last20, scholar_id==x & !is.na(scholarly))))
+sp$scholarly_perc[is.na(sp$scholarly_perc)] <- 0
+sp$scholar_id <- factor(sp$scholar_id, levels = levels_by_age)
+spp <- ggplot(sp, aes(scholar_id, scholarly_perc)) + geom_bar(width=1) + coord_flip() + scale_x_discrete(breaks=NA) + scale_y_continuous(breaks=c(0,1), formatter="percent") + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.text.y=tb, axis.ticks=tb, axis.title.y=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"))
+
+grid.arrange(tl, spp, ncol=2, widths=c(93,7))
 
 
 
 
 
 
-s[s$scholar_id==6771,]
+# Describe use of Twitter features
+##########################################################################
+rt.regex <- "\\bRT @\\w|\\bvia @\\w"
+atreply.regex <- "^@\\w"
+link.regex <- "http://"
+
+tw$is_rt <- FALSE
+tw$is_atreply <- FALSE
+tw$has_link <- FALSE
+
+tw$is_rt[grep(rt.regex, tw$text, perl=TRUE)] <- TRUE
+tw$is_atreply[grep(atreply.regex, tw$text, perl=TRUE)] <- TRUE
+tw$has_link[grep(link.regex, tw$text, perl=TRUE)] <- TRUE
+
+ggplot(tw, aes(table(scholar_id))) + stat_bin()
+
+
+
+
+
+
+
+

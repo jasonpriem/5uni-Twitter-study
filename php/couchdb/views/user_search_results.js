@@ -135,7 +135,7 @@ function (doc){
                 // This user must have some info we can use to judge who she is,
                 //   and must not live in the wrong time zone.
                 try {
-                    if (!hasNoInfo(thisUser) && !isBlacklisted(thisUser)) {
+                    if (1) {
                         var ret = [
                             [doc.name_string, [thisUser.name, thisUser.screen_name]],
                             [doc.institution, [thisUser.location, thisUser.utc_offset / 3600]],
