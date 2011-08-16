@@ -41,6 +41,13 @@ nrow(redund.is) # discarded:
 s <- redund.not
 nrow(s) # we were left with this many: 
 
+# breakdown by uni
+CrossTable(s$institution)
+s.plot <- s
+s.plot$institution <- factor( s.plot$institution )
+levels(s.plot$institution) <- c("a", "b", "c", "d", "e")
+ggplot(s.plot, aes(institution)) + geom_bar() + opts(title="scholars per institution (n=8826)")
+
 # 1b:Forming the sample: removing common names?
 common <- s[s$twitter_users_count == 20,]
 uncommon <- s[s$twitter_users_count < 20,]
@@ -95,7 +102,6 @@ nrow(s.acct.pub) / nrow(s) # % scholars with a public tweet
 sp <- s.acct.pub
 
 
-
 # Find "Active" Twitter accounts in sample (have tweeted recently)
 ##########################################################################
 
@@ -121,8 +127,10 @@ hist(sp$latest_tweet_age, breaks=seq(0, max(sp$latest_tweet_age)+breaks.span, by
 # we'll mark "active" users: it's been fewer than g OR d days since their last tweet (where g = user's longest previous interval between tw, and d = 90)
 sp.act <- subset(sp, latest_tweet_age < 90 | latest_tweet_age < max_gap)
 sp.act.sporadic <- (subset(sp.act, latest_tweet_age >= 90))
-sp.abandonded <- subset(sp, !(sp$scholar_id %in% act$scholar_id))
+sp.abandonded <- subset(sp, !(sp$scholar_id %in% sp.act$scholar_id))
 
+nrow(sp.act) # active accounts
+nrow(sp.act)  / nrow(s)
 nrow(sp) - nrow(sp.act) # inactive accounts
 1 - (nrow(sp.act) / nrow(sp)) # % abandoned accts (tweeted at least once, but now inactive)
 act <- sp.act # shortcut name, since we'll be using this active scholar list a lot
@@ -145,9 +153,9 @@ disc.ct$chisq
 
 # plot % on twitter vs % in sample for discipline
 tg <- ggplot(disc.t.f, aes(active, count, fill=discipline))
-tg <- tg + scale_fill_grey(start=0, end=.95) +  geom_bar(position="fill", colour="white") + ylab("percent of sample") + theme_bw()
+tg <- tg +  geom_bar(position="fill") + ylab("percent of sample") + theme_bw()
 tg <- tg + scale_y_continuous(formatter="percent") + opts(axis.title.x=tb)+ opts(legend.title = tb)
-tg <- tg + opts(panel.grid.major=tb)+ opts(panel.grid.minor=tb) + opts(axis.ticks=tb) + opts(panel.border=tb)
+tg <- tg + opts(panel.grid.major=tb)+ opts(panel.grid.minor=tb) + opts(axis.ticks=tb) + opts(panel.border=tb, title="discipinary breakdown\nof tweeting vs. nontweeting scholars")
 tg
 
 # second, we'll look at rank
@@ -159,10 +167,13 @@ levels(rank.t.f$active) <- c("Nontweeting\nscholars", "Tweeting\nscholars")
 
 # plot % on twitter vs % in sample for rank
 tg <- ggplot(rank.t.f, aes(active, count, fill=rank))
-tg <- tg + scale_fill_grey(start=.2, end=.8) +  geom_bar(position="fill", colour="white") + ylab("percent of sample") + theme_bw()
+tg <- tg  +  geom_bar(position="fill") + ylab("percent of sample") + theme_bw()
 tg <- tg + scale_y_continuous(formatter="percent") + opts(axis.title.x=tb)+ opts(legend.title = tb)
-tg <- tg + opts(panel.grid.major=tb)+ opts(panel.grid.minor=tb) + opts(axis.ticks=tb) + opts(panel.border=tb)
+tg <- tg + opts(panel.grid.major=tb)+ opts(panel.grid.minor=tb) + opts(axis.ticks=tb) + opts(panel.border=tb, title="rank breakdown\nof tweeting vs. nontweeting scholars")
 tg
+
+# is rank significant?
+rank.ct$chisq
 
 # look at discipline and rank together
 act.t <- table(act$superdiscipline, act$rank) / table(s$superdiscipline, s$rank)
@@ -245,7 +256,6 @@ t20$code <- factor(t20$code)
 levels(t20$code) <- c("scholars' experience", "is knowledge", "knowledge pointer (not reviewed)", "knowledge pointer (peer reviewed)", "logistic", "not scholarly")
 t20$code <- factor(t20$code, levels=levels(t20$code)[order(table(t20$code))])
 
-(tw.last20$scholarly)
 
 
 
@@ -257,7 +267,7 @@ t20$code <- factor(t20$code, levels=levels(t20$code)[order(table(t20$code))])
 t20$all<-TRUE
 CrossTable(table(t20$code, t20$all))
 CrossTable(table(t20$scholarly, t20$all))
-ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))
+ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))+ opts( title="Tweet categories, by % of total tweets", axis.title.y=tb, axis.title.x=tb)
 
 df <- NULL
 fakerow <- NULL
@@ -338,7 +348,7 @@ levels_by_age <- tw.levels[rev(order(ages))]
 tw$scholar_id <- factor(tw$scholar_id, levels = levels_by_age)
 
 tw$acct_age_order <- tw$scholar_id
-levels(tw$acct_age_order) <- 1:length(levels(tw$acct_age_order))
+levels(tw$acct_age_order) <- 1:length(levels(tw$acct_Reporage_order))
 
 
 # add some cols:
@@ -348,17 +358,16 @@ nrows <- length(levels(tw$scholar_id))
 
 
 # plot
-tl <- ggplot(tw, aes(created_at, acct_age_order)) + geom_point(alpha=.3, size=.5, shape=20) + scale_x_datetime(major="1 year") + scale_y_discrete("Twitter accounts", breaks=seq(0, nrows, by=20)) + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.ticks=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"))
-
+tl <- ggplot(tw, aes(created_at, acct_age_order)) + geom_point(alpha=.3, size=.5, shape=20, aes(colour=rank)) + scale_x_datetime(major="1 year") + scale_y_discrete("Twitter accounts", breaks=seq(0, nrows, by=20)) + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.ticks=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"),legend.position="none")a
 
 # plot percent scholarly for each account
 # make a column for percent scholarly tweets for all scholars with public tweets
 sp$scholarly_perc <- sapply(sp$scholar_id, function(x) nrow(subset(tw.last20, scholar_id==x & scholarly==TRUE)) / nrow(subset(tw.last20, scholar_id==x & !is.na(scholarly))))
 sp$scholarly_perc[is.na(sp$scholarly_perc)] <- 0
 sp$scholar_id <- factor(sp$scholar_id, levels = levels_by_age)
-spp <- ggplot(sp, aes(scholar_id, scholarly_perc)) + geom_bar(width=1) + coord_flip() + scale_x_discrete(breaks=NA) + scale_y_continuous(breaks=c(0,1), formatter="percent") + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.text.y=tb, axis.ticks=tb, axis.title.y=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"))
+spp <- ggplot(sp, aes(scholar_id, scholarly_perc)) + geom_bar(width=1, aes(fill=rank)) + coord_flip() + scale_x_discrete(breaks=NA) + scale_y_continuous(breaks=c(0,1), formatter="percent") + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.text.y=tb, axis.ticks=tb, axis.title.y=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"),legend.position="none")
 
-grid.arrange(tl, spp, ncol=2, widths=c(93,7))
+grid.arrange(tl, spp, ncol=2, widths=c(94,6))
 
 
 
@@ -379,9 +388,17 @@ tw$is_rt[grep(rt.regex, tw$text, perl=TRUE)] <- TRUE
 tw$is_atreply[grep(atreply.regex, tw$text, perl=TRUE)] <- TRUE
 tw$has_link[grep(link.regex, tw$text, perl=TRUE)] <- TRUE
 
-ggplot(tw, aes(table(scholar_id))) + stat_bin()
+hist(tapply(as.numeric(tw$is_rt), tw$scholar_id, mean))
+hist(tapply(as.numeric(tw$is_atreply), tw$scholar_id, mean))
+hist(tapply(as.numeric(tw$has_link), tw$scholar_id, mean))
 
 
+# make list of tweets by active scholars with >= 1 scholarly tweet
+temp <- subset(act.t20, scholarly_count > 0)
+length(temp$scholar_id)
+tw.personae <- subset(t20, scholar_id %in% temp$scholar_id, select=c("scholar_id", "rank", "dept", "text", "code" ))
+levels(tw.personae$code) <- c("e", "ki", "kpn", "kpp", "l", "ns")
+write.csv(tw.personae, "/home/jason/projects/5uni_twitter/tweets/personae.csv", row.names=F)
 
 
 
