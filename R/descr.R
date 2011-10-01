@@ -2,14 +2,13 @@ library(ggplot2)
 library(gmodels)
 library(vcd)
 library(gridExtra)
-library(RColorBrewer)
 options(width=190)
 tb <- theme_blank()
-tw <- read.csv("~/projects/5uni_twitter/tweets/tweets_all_coded.csv", header=T, colClasses=c("character"))
-s <- read.csv("~/projects/5uni_twitter/scholars/scholars_from_db.csv", header=T, colClasses=c("character"))
+tw <- read.csv("~/projects/5uni-twitter/data/tweets_all_coded.csv", header=T, colClasses=c("character"))
+s <- read.csv("~/projects/5uni-twitter/data/scholars_from_db.csv", header=T, colClasses=c("character"))
+
 
 # format the datasets
-
 tw$code <- factor(tw$code)
 tw$scholar_id <- (as.numeric(tw$scholar_id))
 tw$last20 <- as.logical(as.numeric(tw$last20))
@@ -36,7 +35,7 @@ s$tw_age <- (collection.time - as.numeric(s$tw_created_at)) / 86400 # each twitt
 # 1a: Forming the sample: removing duplicate names
 redund.not <- s[s$is_redundant == 0,]
 redund.is <- s[s$is_redundant == 1,]
-(nrow(redund.not) + nrow(redund.is)) - nrow(s) # sanity check...
+(nrow(redund.not) + nrow(redund.is)) - nrow(s) # sanity check...shoudl be 0
 nrow(redund.is) # discarded:
 s <- redund.not
 nrow(s) # we were left with this many: 
@@ -218,9 +217,9 @@ tw <- merge(tw, s.rank_disc, all.x=TRUE, by="scholar_id")
 tw.last20 <- subset(tw, last20==TRUE) # only tweets that we've coded
 
 # sanity checks
-subset(tw.last20, code=="not coded") # make sure all the tweets in the last20 are coded
+subset(tw.last20, code=="not coded") # make sure all the tweets in the last20 are coded...this should return <0 rows>
 s.coded.num <- length(unique(tw.last20$scholar_id))
-s.coded.num - nrow(sp) # should be same as number of scholars with public tweets
+s.coded.num - nrow(sp) # should be 0 (should be as many scholars coded as scholars with public tweets)
 
 # remove tweets from inactive tweeters
 tw.last20.act <- (subset(tw.last20, scholar_id %in% act$scholar_id))
@@ -230,6 +229,7 @@ tw.from.inactive.num <- nrow(tw.last20) - nrow(tw.last20.act)
 tw.from.inactive.num # throwing out this many tweets from inactive scholars
 tw.from.inactive.num / nrow(tw.last20) # throwing out this much of the coded sample
 t20 <- tw.last20.act # all coded, none from inactive tweeters.
+
 
 # examine non-english tweets, then remove them
 t20.notenglish <- subset(t20, code=="ote")
@@ -293,7 +293,7 @@ fakerow$t.Var1[1] <- ""
 fakerow$label[1] <- ""
 fakerow$prop.col.Freq[1] <- 0
 df <- rbind(fakerow, df)
-ggplot(df, aes(factor(t.Var2), factor(t.Var1), size=prop.col.Freq)) + geom_point(pch=20, colour="#dddddd") + geom_text(aes(label=label, size=.04)) + scale_area(to=c(1,30)) + opts(panel.background=tb, axis.ticks=tb,legend.position="none", axis.title.x=tb, axis.title.y=tb)
+ggplot(df, aes(factor(t.Var2), factor(t.Var1), size=prop.col.Freq)) + geom_point(pch=20, colour="#dddddd") + geom_text(aes(label=label, size=.01)) + scale_area(to=c(1,30)) + opts(panel.background=tb, axis.ticks=tb,legend.position="none", axis.title.x=tb, axis.title.y=tb)
 
 
 # figure out the number and percent of scholarly tweets for each scholar in the active, english-tweeting coded tweets sample
@@ -348,7 +348,7 @@ levels_by_age <- tw.levels[rev(order(ages))]
 tw$scholar_id <- factor(tw$scholar_id, levels = levels_by_age)
 
 tw$acct_age_order <- tw$scholar_id
-levels(tw$acct_age_order) <- 1:length(levels(tw$acct_Reporage_order))
+levels(tw$acct_age_order) <- 1:length(levels(tw$acct_age_order))
 
 
 # add some cols:
@@ -358,7 +358,7 @@ nrows <- length(levels(tw$scholar_id))
 
 
 # plot
-tl <- ggplot(tw, aes(created_at, acct_age_order)) + geom_point(alpha=.3, size=.5, shape=20, aes(colour=rank)) + scale_x_datetime(major="1 year") + scale_y_discrete("Twitter accounts", breaks=seq(0, nrows, by=20)) + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.ticks=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"),legend.position="none")a
+tl <- ggplot(tw, aes(created_at, acct_age_order)) + geom_point(alpha=.3, size=.5, shape=20, aes(colour=rank)) + scale_x_datetime(major="1 year") + scale_y_discrete("Twitter accounts", breaks=seq(0, nrows, by=20)) + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.ticks=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"),legend.position="none")
 
 # plot percent scholarly for each account
 # make a column for percent scholarly tweets for all scholars with public tweets
@@ -388,6 +388,7 @@ tw$is_rt[grep(rt.regex, tw$text, perl=TRUE)] <- TRUE
 tw$is_atreply[grep(atreply.regex, tw$text, perl=TRUE)] <- TRUE
 tw$has_link[grep(link.regex, tw$text, perl=TRUE)] <- TRUE
 
+# proportion RTs, @replies, and tweets with links, by scholar
 hist(tapply(as.numeric(tw$is_rt), tw$scholar_id, mean))
 hist(tapply(as.numeric(tw$is_atreply), tw$scholar_id, mean))
 hist(tapply(as.numeric(tw$has_link), tw$scholar_id, mean))
