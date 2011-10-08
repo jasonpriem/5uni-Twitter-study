@@ -10,7 +10,9 @@ Investigators
 Products
 --------
 
-* Poster presented at [Metrics 2011 Symposium on Informetric and Scientometric Research](http://www.asis.org/SIG/SIGMET/metrics2011.html): [abstract](http://jasonpriem.com/self-archived/twitter-scholars-poster-abstract.pdf) [poster](http://jasonpriem.com/self-archived/5uni-poster.png)
+* Poster presented at [Metrics 2011 Symposium on Informetric and Scientometric Research](http://www.asis.org/SIG/SIGMET/metrics2011.html): 
+    * [abstract](http://jasonpriem.com/self-archived/twitter-scholars-poster-abstract.pdf) 
+    * [poster](http://jasonpriem.com/self-archived/5uni-poster.png)
 * Paper will be submitted to [JASIST](http://www.asis.org/jasist.html) in late October.
 
 Data
