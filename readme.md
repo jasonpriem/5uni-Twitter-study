@@ -18,5 +18,5 @@ Data
 
 We're not including the raw data with this project to protect the privacy of the people in our sample. We used only information from public Twitter profiles and public Web pages to compile the sample; however, it's important to consider people's expectations of privacy when aggregating data from multiple sources [1]. So although we generally prefer to share all research data, in this case we're erring on the side of caution.
 
-[1] Zimmer, M. (2010). “But the data is already public”: on the ethics of research in Facebook. Ethics and information technology, 1–13. [http://michaelzimmer.org/2009/06/18/draft-paper-but-the-data-is-already-public/]
+[1] Zimmer, M. (2010). “But the data is already public”: on the ethics of research in Facebook. Ethics and information technology, 1–13. http://michaelzimmer.org/2009/06/18/draft-paper-but-the-data-is-already-public/
 
