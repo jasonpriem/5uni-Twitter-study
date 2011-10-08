@@ -35,7 +35,7 @@ s$tw_age <- (collection.time - as.numeric(s$tw_created_at)) / 86400 # each twitt
 # 1a: Forming the sample: removing duplicate names
 redund.not <- s[s$is_redundant == 0,]
 redund.is <- s[s$is_redundant == 1,]
-(nrow(redund.not) + nrow(redund.is)) - nrow(s) # sanity check...shoudl be 0
+(nrow(redund.not) + nrow(redund.is)) - nrow(s) # sanity check...should be 0
 nrow(redund.is) # discarded:
 s <- redund.not
 nrow(s) # we were left with this many: 
@@ -46,6 +46,7 @@ s.plot <- s
 s.plot$institution <- factor( s.plot$institution )
 levels(s.plot$institution) <- c("a", "b", "c", "d", "e")
 ggplot(s.plot, aes(institution)) + geom_bar() + opts(title="scholars per institution (n=8826)")
+
 
 # 1b:Forming the sample: removing common names?
 common <- s[s$twitter_users_count == 20,]
@@ -253,7 +254,7 @@ t20 <- t20.eng
 
 # relevel 
 t20$code <- factor(t20$code)
-levels(t20$code) <- c("scholars' experience", "is knowledge", "knowledge pointer (not reviewed)", "knowledge pointer (peer reviewed)", "logistic", "not scholarly")
+levels(t20$code) <- c("scholars' experience", "scholarly content", "scholarly link (not reviewed)", "scholarly link (peer reviewed)", "logistic", "not scholarly")
 t20$code <- factor(t20$code, levels=levels(t20$code)[order(table(t20$code))])
 
 
@@ -267,7 +268,11 @@ t20$code <- factor(t20$code, levels=levels(t20$code)[order(table(t20$code))])
 t20$all<-TRUE
 CrossTable(table(t20$code, t20$all))
 CrossTable(table(t20$scholarly, t20$all))
-ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))+ opts( title="Tweet categories, by % of total tweets", axis.title.y=tb, axis.title.x=tb)
+cats.gg <- ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))+ opts( title="Tweet categories, by % of total tweets", axis.title.y=tb, axis.title.x=tb, panel.background=tb)
+
+png('/home/jason/projects/5uni-twitter/img/categories.png', width=10*300, height=4*300, res=300)
+print(cats.gg)
+dev.off()
 
 df <- NULL
 fakerow <- NULL
@@ -282,6 +287,9 @@ fakerow$prop.col.Freq[1] <- 0
 fakerow
 df <- rbind(fakerow, df)
 ggplot(df, aes(factor(t.Var2), factor(t.Var1), size=prop.col.Freq)) + geom_point(pch=20, colour="#dddddd") + geom_text(aes(label=label, size=.01)) + scale_area(to=c(1,30)) + opts(panel.background=tb, axis.ticks=tb,legend.position="none", axis.title.x=tb, axis.title.y=tb)
+
+
+
 
 df <- NULL
 fakerow <- NULL
@@ -358,16 +366,19 @@ nrows <- length(levels(tw$scholar_id))
 
 
 # plot
-tl <- ggplot(tw, aes(created_at, acct_age_order)) + geom_point(alpha=.3, size=.5, shape=20, aes(colour=rank)) + scale_x_datetime(major="1 year") + scale_y_discrete("Twitter accounts", breaks=seq(0, nrows, by=20)) + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.ticks=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"),legend.position="none")
+base.size <- 33
+tl <- ggplot(tw, aes(created_at, acct_age_order)) + geom_point(alpha=.3, pch=20, size=4, aes(colour=rank)) + scale_x_datetime(major="1 year", expand=c(0,500000)) + scale_y_discrete(breaks=seq(0, nrows, by=20)) + opts(panel.background = tb, panel.grid.major=theme_line(size=1, colour="#eeeeee"), panel.grid.minor=tb, panel.border=tb, axis.ticks=tb, axis.title.x=tb, axis.title.y=tb, plot.margin=unit(c(.3,.3,.3,.3), "cm"),legend.position="none", axis.text.x=theme_text(size=base.size, colour="#555555"), axis.text.y=theme_text(size=base.size, colour="#dddddd"))
 
 # plot percent scholarly for each account
 # make a column for percent scholarly tweets for all scholars with public tweets
 sp$scholarly_perc <- sapply(sp$scholar_id, function(x) nrow(subset(tw.last20, scholar_id==x & scholarly==TRUE)) / nrow(subset(tw.last20, scholar_id==x & !is.na(scholarly))))
 sp$scholarly_perc[is.na(sp$scholarly_perc)] <- 0
 sp$scholar_id <- factor(sp$scholar_id, levels = levels_by_age)
-spp <- ggplot(sp, aes(scholar_id, scholarly_perc)) + geom_bar(width=1, aes(fill=rank)) + coord_flip() + scale_x_discrete(breaks=NA) + scale_y_continuous(breaks=c(0,1), formatter="percent") + opts(panel.background = tb, panel.grid.major=theme_line(size=.1, colour="#cccccc"), panel.grid.minor=tb, panel.border=tb, axis.text.y=tb, axis.ticks=tb, axis.title.y=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"),legend.position="none")
+spp <- ggplot(sp, aes(scholar_id, scholarly_perc)) + geom_bar(width=.9, aes(fill=rank)) + coord_flip() + scale_x_discrete(breaks=NA) + scale_y_continuous(breaks=c(0,.5,1), formatter="percent") + opts(panel.background = tb, panel.grid.major=theme_line(size=1, colour="#eeeeee"), panel.grid.minor=tb, panel.border=tb, axis.text.y=tb, axis.ticks=tb, axis.title.y=tb, axis.title.x=tb, plot.margin=unit(c(.1,.1,.1,.1), "cm"),legend.position="none", axis.text.x=theme_text(size=base.size), axis.text.y=tb)
 
-grid.arrange(tl, spp, ncol=2, widths=c(94,6))
+png('/home/jason/projects/5uni-twitter/img/tweetlines.png', width=30*300, height=25*300, res=300)
+print(grid.arrange(tl, spp, ncol=2, widths=c(94,6)))
+dev.off()
 
 
 
