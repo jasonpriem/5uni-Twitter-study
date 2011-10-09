@@ -1,4 +1,4 @@
-This project examines the Twitter use habits, if any, of 8,826 scholars from five diverse universities.
+Is Twitter an ascendant scholarly communication medium, or just an overhyped fad? We sought to answer this question by examining the Twitter use habits, if any, of 8,826 scholars from five diverse universities.
 
 Investigators
 -------------
