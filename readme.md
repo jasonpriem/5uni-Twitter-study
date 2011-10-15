@@ -22,3 +22,8 @@ We're not including the raw data with this project to protect the privacy of the
 
 [1] Zimmer, M. (2010). “But the data is already public”: on the ethics of research in Facebook. Ethics and information technology, 1–13. http://michaelzimmer.org/2009/06/18/draft-paper-but-the-data-is-already-public/
 
+Further reading
+---------------
+
+This is the second study we've done on scholarly Tweeting. You can find a citation and link to fulltext of our first one, "How and why scholars cite on Twitter," in this [public Zotero library](https://www.zotero.org/groups/twitter_for_scholarship), along with a selection of similar studies by other folks.
+
