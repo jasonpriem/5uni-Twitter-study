@@ -25,5 +25,5 @@ We're not including the raw data with this project to protect the privacy of the
 Further reading
 ---------------
 
-This is the second study we've done on scholarly Tweeting. You can find a citation and link to fulltext of our first one, "How and why scholars cite on Twitter," in this [public Zotero library](https://www.zotero.org/groups/twitter_for_scholarship), along with a selection of similar studies by other folks.
+This is the second study we've done on scholarly Tweeting. You can find a citation and link to fulltext of our first one, "How and why scholars cite on Twitter," in this [public Zotero library](https://www.zotero.org/groups/twitter_for_scholarship/items), along with a selection of similar studies by other folks.
 
