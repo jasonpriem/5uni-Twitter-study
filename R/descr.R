@@ -4,8 +4,8 @@ library(vcd)
 library(gridExtra)
 options(width=190)
 tb <- theme_blank()
-tw <- read.csv("data/tweets_all_coded.csv", header=T, colClasses=c("character"))
-s <- read.csv("data/scholars_from_db.csv", header=T, colClasses=c("character"))
+tw <- read.csv("../data/tweets_all_coded.csv", header=T, colClasses=c("character"))
+s <- read.csv("../data/scholars_from_db.csv", header=T, colClasses=c("character"))
 
 
 # format the datasets
@@ -49,6 +49,7 @@ ggplot(s.plot, aes(institution)) + geom_bar() + opts(title="scholars per institu
 
 
 # 1b:Forming the sample: removing common names?
+sum(s$twitter_users_count) # the total number of Twitter accounts returned by the search API for all scholars.
 common <- s[s$twitter_users_count == 20,]
 uncommon <- s[s$twitter_users_count < 20,]
 (nrow(common) + nrow(uncommon)) - nrow(s)
@@ -74,14 +75,17 @@ mosaicplot(s.t, color=c("pink", "lightblue"), off=c(4, 2), las=3, cex.axis=1)
 # Twitter accounts in sample
 ##########################################################################
 sum(s$twitter_users_count) 
+length(s$tw_statuses_count[s$tw_statuses_count > 3200 & !is.na(s$tw_statuses_count)]) # number of accounts that have more tweets than the API would let us fetch
+
+
 # of these 9139 accounts had no descr, url, or location, and 390 were celebrities that were 20 oft-returned celebs
 # (src: code/php/couchdb/views/user_search_results.js)
 # This left 7648 profiles to check mostly manually (made limited use of timezone as an automated filter)
 17177 - (9139 + 390 + 7648) # sanity check, should be 0
 
 s.acct <- s[!is.na(s$tw_screen_name),]
-nrow(s.acct) # s from our sample with Twitter accts
-nrow(s.acct) / nrow(s) # % s with Twitter accts
+nrow(s.acct) # scholars from our sample with Twitter accts
+nrow(s.acct) / nrow(s) # % scholars with Twitter accts
 
 # let's look at accounts with no tweets
 s.acct.silent <- subset(s.acct, tw_statuses_count==0)
@@ -104,10 +108,10 @@ sp <- s.acct.pub
 
 # Find "Active" Twitter accounts in sample (have tweeted recently)
 ##########################################################################
-
-
 tw.last20only <- subset(tw, last20==TRUE) # removes a bunch of older tweets, saves time
-sp$latest_tweet_age <- sapply(sp$scholar_id, function(id) sort(as.vector(tw.last20only[tw.last20only$scholar_id==id,"age"]))[1])
+nrow(tw.last20only) #number of tweets coded
+sp$latest_tweet_age <- sapply(sp$scholar_id, function(id) sort(as.vector(tw.last20only[tw.last20only$scholar_id==id,"age"]))[1]) 
+
 
 # finds the biggest difference between any two adjacent numbers in a given vector
 max.gap <- function(x){
@@ -221,6 +225,7 @@ s.rank_disc <- s[,c("scholar_id", "rank", "superdiscipline")]
 tw <- merge(tw, s.rank_disc, all.x=TRUE, by="scholar_id")
 tw.last20 <- subset(tw, last20==TRUE) # only tweets that we've coded
 
+
 # sanity checks
 subset(tw.last20, code=="not coded") # make sure all the tweets in the last20 are coded...this should return <0 rows>
 s.coded.num <- length(unique(tw.last20$scholar_id))
@@ -238,6 +243,7 @@ t20 <- tw.last20.act # all coded, none from inactive tweeters.
 
 # examine non-english tweets, then remove them
 t20.notenglish <- subset(t20, code=="ote")
+length(unique(t20.notenglish$scholar_id)) # scholars with at least one non-english tweet
 nrow(t20.notenglish) # count non-english tweets
 nrow(t20.notenglish) / nrow(t20) # percent non-english tweets
 act$ote_tweets_count <- sapply(act$scholar_id, function(x) nrow(subset(t20.notenglish, scholar_id == x)))
@@ -273,12 +279,12 @@ t20$all<-TRUE
 CrossTable(table(t20$code, t20$all))
 CrossTable(table(t20$scholarly, t20$all))
 cats.gg <- ggplot(t20, aes(code, ..count../sum(..count..))) + geom_bar() + coord_flip() + opts(axis.ticks=tb)+ scale_y_continuous(formatter="percent", breaks=c(.3, .6))+ opts( title="Tweet categories, by % of total tweets", axis.title.y=tb, axis.title.x=tb, panel.background=tb)
+cats.gg
 
 png('img/categories.png', width=10*300, height=4*300, res=300)
 print(cats.gg)
 dev.off()
 
-CrossTable(table(t20$scholarly, t))
 
 df <- NULL
 fakerow <- NULL
@@ -292,7 +298,7 @@ fakerow$label[1] <- ""
 fakerow$prop.col.Freq[1] <- 0
 fakerow
 df <- rbind(fakerow, df)
-ggplot(df, aes(factor(t.Var2), factor(t.Var1), size=prop.col.Freq)) + geom_point(pch=20, colour="#dddddd") + geom_text(aes(label=label, size=.01)) + scale_area(to=c(1,30)) + opts(panel.background=tb, axis.ticks=tb,legend.position="none", axis.title.x=tb, axis.title.y=tb)
+ggplot(df, aes(factor(t.Var2), factor(t.Var1), size=prop.col.Freq)) + geom_point(pch=20, colour="#dddddd")+ scale_area(to=c(1,110)) + geom_text(aes(label=label), size=12)  + opts(panel.background=tb, axis.ticks=tb,legend.position="none", axis.title.x=tb, axis.title.y=tb )
 
 
 
@@ -307,13 +313,13 @@ fakerow$t.Var1[1] <- ""
 fakerow$label[1] <- ""
 fakerow$prop.col.Freq[1] <- 0
 df <- rbind(fakerow, df)
-ggplot(df, aes(factor(t.Var2), factor(t.Var1), size=prop.col.Freq)) + geom_point(pch=20, colour="#dddddd") + geom_text(aes(label=label, size=.01)) + scale_area(to=c(1,30)) + opts(panel.background=tb, axis.ticks=tb,legend.position="none", axis.title.x=tb, axis.title.y=tb)
+ggplot(df, aes(factor(t.Var2), factor(t.Var1), size=prop.col.Freq)) + geom_point(pch=20, colour="#dddddd")+ scale_area(to=c(1,110)) + geom_text(aes(label=label), size=12)  + opts(panel.background=tb, axis.ticks=tb,legend.position="none", axis.title.x=tb, axis.title.y=tb )
 
 
 # figure out the number and percent of scholarly tweets for each scholar in the active, english-tweeting coded tweets sample
 act.t20 <- subset(act, scholar_id %in% t20$scholar_id)
 t20[is.na(t20$scholarly),] # shouldn't be any NA's, because all uncoded and ote tweets are gone
-
+b
 act.t20$count<-sapply(act.t20$scholar_id, function(x) nrow(subset(t20, scholar_id==x)))
 act.t20$scholarly_count<-sapply(act.t20$scholar_id, function(x) nrow(subset(t20, scholarly==TRUE & scholar_id==x)))
 act.t20$scholarly_count_log <- log(act.t20$scholarly_count+1)
@@ -323,7 +329,8 @@ act.t20$scholar_id <- factor(act.t20$scholar_id, levels=act.t20$scholar_id[order
 nrow(act.t20)
 ggplot(act.t20, aes(rank, scholarly_perc)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.5) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb, panel.background=tb ) + scale_y_continuous(formatter="percent")
 
-tapply(act.t20$scholarly_perc, act.t20$rank, mean) # mean perc of scholarly tweets, by rank
+tapply(act.t20$scholarly_count, act.t20$rank, sum) / tapply(act.t20$count, act.t20$rank, sum) # mean perc of scholarly tweets, by rank
+
 act.t20$tweets_per_day <- act.t20$tw_statuses_count / act.t20$tw_age
 mean(act.t20$tweets_per_day) * 7 # mean tweets per week
 
@@ -349,12 +356,12 @@ ggplot(act.t20, aes(scholarly_count_log)) + geom_density() + facet_grid(.~rank) 
 
 # What factors predict number of scholarly tweets?
 ggplot(act.t20, aes(superdiscipline, scholarly_perc)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
-ggplot(act.t20, aes(rank, scholarly_perc)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, alpha=.2) + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb ) + scale_y_continuous(formatter="percent")
+ggplot(act.t20, aes(rank, scholarly_perc)) + geom_boxplot(outlier.shape=NA) + coord_flip() + geom_jitter(pch=20, size=10, alpha=.2, color="blue") + opts(axis.ticks=tb, panel.grid.major=tb, panel.grid.minor=tb, axis.title.y=tb, panel.background=tb, axis.text.x=theme_text(size=30) ) + scale_y_continuous(formatter="percent")
 
 model <- lm(act.t20$scholarly_count ~ act.t20$count + act.t20$rank + act.t20$superdiscipline)
 summary(model)
 
-
+act.t20$count
 
 
 
@@ -417,6 +424,9 @@ tw$has_link[grep(link.regex, tw$text, perl=TRUE)] <- TRUE
 hist(tapply(as.numeric(tw$is_rt), tw$scholar_id, mean))
 hist(tapply(as.numeric(tw$is_atreply), tw$scholar_id, mean))
 hist(tapply(as.numeric(tw$has_link), tw$scholar_id, mean))
+
+nrow(tw[tw$is_atreply & tw$last20,]) / nrow(tw[tw$last20,]) # percent of coded tweets that are @replies
+
 
 
 # make list of tweets by active scholars with >= 1 scholarly tweet
