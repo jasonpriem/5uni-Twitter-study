@@ -15,6 +15,14 @@ Products
     * [poster](http://jasonpriem.com/self-archived/5uni-poster.png)
 * Paper will be submitted to [JASIST](http://www.asis.org/jasist.html) in late October.
 
+Coverage
+--------
+
+* On [ReadWriteWeb](http://www.readwriteweb.com/), ["How Scholars Are Using Twitter (Infographic)"](http://www.readwriteweb.com/archives/how_scholars_are_using_twitter_infographic.php)
+* On [Scholarly Kitchen](scholarlykitchen.sspnet.org), ["Short-term Thinking, Twitter, Economics, and the Change Process"](http://scholarlykitchen.sspnet.org/2011/10/13/short-term-thinking-twitter-economics-and-the-change-process/)
+* On the [LSE Impact of Social Science Blog](http://blogs.lse.ac.uk/impactofsocialsciences/), ["As scholars undertake a great migration to online publishing, altmetrics stands to provide an academic measurement of twitter and other online activity"](http://blogs.lse.ac.uk/impactofsocialsciences/2011/11/21/altmetrics-twitter/) (guest post by Jason)
+
+
 Data
 ----
 
